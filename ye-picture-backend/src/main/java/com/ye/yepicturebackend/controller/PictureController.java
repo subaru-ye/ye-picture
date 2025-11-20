@@ -49,8 +49,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-// todo 获取图片地址会直接拿到原链接,存储桶信息隐藏问题
-// todo 缓存代码优化,提取成manager
 @Slf4j
 @RestController
 @RequestMapping("/picture")
@@ -67,7 +65,6 @@ public class PictureController {
 
     @Resource
     private AliYunAiApi aliYunAiApi;
-
 
     // region 上传照片核心
 

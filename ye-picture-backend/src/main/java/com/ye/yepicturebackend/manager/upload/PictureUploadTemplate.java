@@ -50,7 +50,7 @@ public abstract class PictureUploadTemplate {
         // 2. 构建上传文件名和图片存储路径
         String uuid = RandomUtil.randomString(8);
         String originFilename = getOriginFilename(inputSource);
-        // 【新增】清洗文件名中的非法参数
+        // 清洗文件名中的非法参数
         originFilename = cleanFilename(originFilename);
         String fileSuffix = FileUtil.getSuffix(originFilename);
         // 上传文件名

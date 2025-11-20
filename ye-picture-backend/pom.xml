@@ -151,7 +151,12 @@
             <version>13.0</version>
             <scope>compile</scope>
         </dependency>
-
+        <!--腾讯混元大模型-->
+        <dependency>
+            <groupId>com.tencentcloudapi</groupId>
+            <artifactId>tencentcloud-sdk-java-hunyuan</artifactId>
+            <version>3.1.1364</version>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>

@@ -14,6 +14,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ye.yepicturebackend.api.aliyunai.AliYunAiApi;
 import com.ye.yepicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
 import com.ye.yepicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.ye.yepicturebackend.api.hunyuan.HunyuanImageAnalysis;
+import com.ye.yepicturebackend.api.hunyuan.model.ImageAnalysisResult;
 import com.ye.yepicturebackend.common.DeleteRequest;
 import com.ye.yepicturebackend.config.CosClientConfig;
 import com.ye.yepicturebackend.exception.BusinessException;
@@ -53,6 +55,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -105,6 +108,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private PictureCategoryMapper pictureCategoryMapper;
+
+    @Resource
+    private HunyuanImageAnalysis hunyuanImageAnalysis;
 
     // region 上传照片核心
 
@@ -721,7 +727,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 ErrorCode.NOT_FOUND_ERROR, "图片不存在");
         // 空间权限校验
         Long spaceId = picture.getSpaceId();
-        Space space=null;
+        Space space = null;
         if (spaceId != null) {
             boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
             ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR, "没有空间权限");
@@ -830,7 +836,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 从容器中筛选图片标签
         Elements imgElementList = div.select(".iusc");
 
-        // 4. 遍历图片，批量上传
+        // 4. 遍历图片，批量上传并AI分析
         int uploadCount = 0;
         for (Element imgElement : imgElementList) {
             // 获取data-m属性中的JSON字符串
@@ -861,12 +867,22 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             if (StrUtil.isNotBlank(namePrefix)) {
                 pictureUploadRequest.setPicName(namePrefix + (uploadCount + 1));
             }
-            // 设置统一的分类和标签（如果提供的话）
-            if (StrUtil.isNotBlank(batchCategory)) {
-                pictureUploadRequest.setCategory(batchCategory);
-            }
-            if (CollUtil.isNotEmpty(batchTags)) {
-                pictureUploadRequest.setTags(batchTags);
+            // 调用AI分析图片内容
+            try {
+                ImageAnalysisResult aiResult = hunyuanImageAnalysis.analyzeImage(fileUrl);
+
+                pictureUploadRequest.setCategory(aiResult.getCategory());
+                pictureUploadRequest.setTags(Arrays.asList(aiResult.getTags().split("，")));
+                pictureUploadRequest.setIntroduction(aiResult.getDescription());
+
+                log.info("图片AI分析成功: 分类={}, 标签={}", aiResult.getCategory(), aiResult.getTags());
+
+            } catch (Exception e) {
+                // AI分析失败的处理
+                pictureUploadRequest.setCategory("其他");
+                pictureUploadRequest.setTags(Arrays.asList(searchText, "网络图片"));
+                pictureUploadRequest.setIntroduction("一张来自网络的图片");
+                log.warn("图片AI分析失败: {}", e.getMessage());
             }
             // 调用单张图片上传方法，处理上传逻辑
             try {
@@ -963,7 +979,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         if (CollUtil.isEmpty(pictureList)) {
             return Collections.emptyList();
         }
-        
+
         // 4. 颜色格式转换：支持 #RRGGBB 和 0xRRGGBB 两种格式
         String normalizedColor = picColor;
         if (picColor.startsWith("#")) {
@@ -973,7 +989,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             // 如果没有前缀，添加 0x 前缀
             normalizedColor = "0x" + picColor;
         }
-        
+
         // 5. 将目标颜色的十六进制字符串解析为Color对象
         Color targetColor;
         try {
@@ -1114,7 +1130,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.orderByAsc(PictureTag::getSortOrder)
                 .orderByAsc(PictureTag::getCreateTime);
         List<PictureTag> tagList = pictureTagMapper.selectList(queryWrapper);
-        
+
         // 提取标签名称列表
         return tagList.stream()
                 .map(PictureTag::getTagName)
@@ -1128,7 +1144,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.orderByAsc(PictureCategory::getSortOrder)
                 .orderByAsc(PictureCategory::getCreateTime);
         List<PictureCategory> categoryList = pictureCategoryMapper.selectList(queryWrapper);
-        
+
         // 提取分类名称列表
         return categoryList.stream()
                 .map(PictureCategory::getCategoryName)
@@ -1138,18 +1154,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Override
     public Map<String, Object> syncTagsAndCategoriesFromPublicPictures() {
         log.info("开始从公共图库同步标签和分类到数据库表");
-        
+
         // 1. 查询所有公共图库的图片（spaceId 为 null）
         LambdaQueryWrapper<Picture> pictureQueryWrapper = new LambdaQueryWrapper<>();
         pictureQueryWrapper.isNull(Picture::getSpaceId)
                 .select(Picture::getId, Picture::getCategory, Picture::getTags);
         List<Picture> publicPictures = this.list(pictureQueryWrapper);
-        
+
         // 过滤掉 null 对象，确保列表中没有 null 元素
         publicPictures = publicPictures.stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        
+
         if (CollUtil.isEmpty(publicPictures)) {
             log.info("公共图库中没有图片，无需同步");
             Map<String, Object> result = new HashMap<>();
@@ -1158,7 +1174,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             result.put("message", "公共图库中没有图片，无需同步");
             return result;
         }
-        
+
         // 2. 提取所有唯一的分类
         Set<String> categorySet = new HashSet<>();
         for (Picture picture : publicPictures) {
@@ -1170,7 +1186,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 categorySet.add(picture.getCategory().trim());
             }
         }
-        
+
         // 3. 提取所有唯一的标签
         Set<String> tagSet = new HashSet<>();
         for (Picture picture : publicPictures) {
@@ -1190,24 +1206,24 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                         }
                     }
                 } catch (Exception e) {
-                    log.warn("解析图片标签失败，图片ID：{}，标签内容：{}", 
-                            picture != null ? picture.getId() : "unknown", 
+                    log.warn("解析图片标签失败，图片ID：{}，标签内容：{}",
+                            picture != null ? picture.getId() : "unknown",
                             picture != null ? picture.getTags() : "null", e);
                 }
             }
         }
-        
+
         // 4. 查询数据库中已存在的标签和分类
         List<PictureTag> existingTags = pictureTagMapper.selectList(null);
         Set<String> existingTagNames = existingTags.stream()
                 .map(PictureTag::getTagName)
                 .collect(Collectors.toSet());
-        
+
         List<PictureCategory> existingCategories = pictureCategoryMapper.selectList(null);
         Set<String> existingCategoryNames = existingCategories.stream()
                 .map(PictureCategory::getCategoryName)
                 .collect(Collectors.toSet());
-        
+
         // 5. 插入新的标签
         int newTagCount = 0;
         int sortOrder = 0;
@@ -1221,7 +1237,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 log.info("新增标签：{}", tagName);
             }
         }
-        
+
         // 6. 插入新的分类
         int newCategoryCount = 0;
         sortOrder = 0;
@@ -1235,7 +1251,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 log.info("新增分类：{}", categoryName);
             }
         }
-        
+
         // 7. 返回同步结果
         Map<String, Object> result = new HashMap<>();
         result.put("tagCount", newTagCount);
@@ -1248,7 +1264,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Override
     public Map<String, Object> refreshPictureColors() {
         log.info("开始批量刷新历史图片的主色调");
-        
+
         // 1. 查询所有没有主色调的图片
         LambdaQueryWrapper<Picture> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.isNull(Picture::getPicColor)
@@ -1257,7 +1273,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 .isNotNull(Picture::getUrl)
                 .select(Picture::getId, Picture::getUrl);
         List<Picture> picturesWithoutColor = this.list(queryWrapper);
-        
+
         if (CollUtil.isEmpty(picturesWithoutColor)) {
             Map<String, Object> resultMap = new HashMap<>();
             resultMap.put("totalCount", 0);
@@ -1266,26 +1282,26 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             resultMap.put("message", "没有需要刷新主色调的图片");
             return resultMap;
         }
-        
+
         int totalCount = picturesWithoutColor.size();
         int successCount = 0;
         int failCount = 0;
-        
+
         log.info("找到 {} 张需要刷新主色调的图片", totalCount);
-        
+
         // 2. 批量处理图片，提取主色调
         for (Picture picture : picturesWithoutColor) {
             try {
                 // 从图片URL读取图片并计算平均颜色
                 String picColor = extractMainColorFromUrl(picture.getUrl());
-                
+
                 if (StrUtil.isNotBlank(picColor)) {
                     // 更新图片的主色调
                     Picture updatePicture = new Picture();
                     updatePicture.setId(picture.getId());
                     updatePicture.setPicColor(picColor);
                     boolean updateResult = this.updateById(updatePicture);
-                    
+
                     if (updateResult) {
                         successCount++;
                         log.debug("成功刷新图片 {} 的主色调: {}", picture.getId(), picColor);
@@ -1302,15 +1318,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 log.error("处理图片 {} 时发生异常，URL: {}", picture.getId(), picture.getUrl(), e);
             }
         }
-        
+
         // 3. 构建返回结果
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("totalCount", totalCount);
         resultMap.put("successCount", successCount);
         resultMap.put("failCount", failCount);
-        resultMap.put("message", String.format("刷新完成：总计 %d 张，成功 %d 张，失败 %d 张", 
+        resultMap.put("message", String.format("刷新完成：总计 %d 张，成功 %d 张，失败 %d 张",
                 totalCount, successCount, failCount));
-        
+
         log.info("批量刷新主色调完成：总计 {} 张，成功 {} 张，失败 {} 张", totalCount, successCount, failCount);
         return resultMap;
     }
@@ -1326,30 +1342,30 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         if (StrUtil.isBlank(imageUrl)) {
             return null;
         }
-        
+
         try {
             // 1. 从URL读取图片
             java.net.URI uri = new java.net.URI(imageUrl);
             java.net.URL url = uri.toURL();
             java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(url);
-            
+
             if (image == null) {
                 log.warn("无法读取图片: {}", imageUrl);
                 return null;
             }
-            
+
             // 2. 计算所有像素的平均RGB值
             long totalRed = 0;
             long totalGreen = 0;
             long totalBlue = 0;
             int pixelCount = 0;
-            
+
             int width = image.getWidth();
             int height = image.getHeight();
-            
+
             // 为了性能考虑，可以采样计算（每N个像素采样一次）
             int sampleStep = Math.max(1, Math.min(width, height) / 100); // 最多采样10000个像素点
-            
+
             for (int x = 0; x < width; x += sampleStep) {
                 for (int y = 0; y < height; y += sampleStep) {
                     int rgb = image.getRGB(x, y);
@@ -1357,26 +1373,26 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                     int red = (rgb >> 16) & 0xFF;
                     int green = (rgb >> 8) & 0xFF;
                     int blue = rgb & 0xFF;
-                    
+
                     totalRed += red;
                     totalGreen += green;
                     totalBlue += blue;
                     pixelCount++;
                 }
             }
-            
+
             if (pixelCount == 0) {
                 return null;
             }
-            
+
             // 3. 计算平均值并转换为十六进制格式
             int avgRed = (int) (totalRed / pixelCount);
             int avgGreen = (int) (totalGreen / pixelCount);
             int avgBlue = (int) (totalBlue / pixelCount);
-            
+
             // 转换为0xRRGGBB格式（与COS返回格式一致）
             String hexColor = String.format("0x%02X%02X%02X", avgRed, avgGreen, avgBlue);
-            
+
             return hexColor;
         } catch (Exception e) {
             log.error("从URL提取主色调失败: {}", imageUrl, e);
