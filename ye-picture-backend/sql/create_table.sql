@@ -151,3 +151,8 @@ CREATE TABLE IF NOT EXISTS sys_notice
 
 ALTER TABLE sys_notice
     ADD COLUMN reviewStatus TINYINT NULL DEFAULT NULL COMMENT '审核状态：0-待审,1-通过,2-拒绝';
+
+ALTER TABLE picture
+    ADD COLUMN originKey VARCHAR(255) NULL COMMENT '原图COS相对路径',
+    ADD COLUMN compressKey VARCHAR(255) NULL COMMENT '压缩图COS相对路径',
+    ADD COLUMN thumbnailKey VARCHAR(255) NULL COMMENT '缩略图COS相对路径';

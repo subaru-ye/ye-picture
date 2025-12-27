@@ -98,6 +98,7 @@ public abstract class PictureUploadTemplate {
         // 剔除非法字符（如 \ / * ? : " < > | 等）
         return filename.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
+
     /**
      * 填充原图片基础信息
      *
@@ -127,7 +128,16 @@ public abstract class PictureUploadTemplate {
             log.warn("获取原图片大小失败（文件名：{}），使用默认值0", originFilename, e);
             result.setPicSize(0L);
         }
-        result.setUrl(buildCosAccessUrl(originUploadPath));
+
+        // ====== 阶段 1 双写逻辑开始 ======
+        // 1. 旧字段：仍然生成完整 URL（兼容）
+        String fullUrl = buildCosAccessUrl(originUploadPath);
+        result.setUrl(fullUrl);
+
+        // 2. 新字段：存储标准化的 COS Key（去掉前导 /）
+        String normalizedKey = originUploadPath.startsWith("/") ? originUploadPath.substring(1) : originUploadPath;
+        result.setOriginKey(normalizedKey);
+        // ====== 阶段 1 双写逻辑结束 ======
     }
 
     /**
@@ -143,10 +153,15 @@ public abstract class PictureUploadTemplate {
         }
         CIObject compressCiObj = ciObjectList.get(0);
         CIObject thumbnailCiObj = ciObjectList.size() > 1 ? ciObjectList.get(1) : compressCiObj;
-        // 压缩图访问URL
+        // ====== 阶段 1 双写逻辑开始 ======
+        // 1. 旧字段：仍然生成完整 URL（兼容）
         result.setCompressUrl(buildCosAccessUrl(compressCiObj.getKey()));
-        // 缩略图访问URL
         result.setThumbnailUrl(buildCosAccessUrl(thumbnailCiObj.getKey()));
+
+        // 2. 新字段：直接存储 COS Key（CI 返回的 key 已无前导 /）
+        result.setCompressKey(compressCiObj.getKey());
+        result.setThumbnailKey(thumbnailCiObj.getKey());
+        // ====== 阶段 1 双写逻辑结束 ======
     }
 
     /**

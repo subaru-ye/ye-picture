@@ -24,6 +24,21 @@ public class UploadPictureResult {
     private String thumbnailUrl;
 
     /**
+     * 原图 COS 相对路径（Key）
+     */
+    private String originKey;
+
+    /**
+     * 压缩图 COS 相对路径（Key）
+     */
+    private String compressKey;
+
+    /**
+     * 缩略图 COS 相对路径（Key）
+     */
+    private String thumbnailKey;
+
+    /**
      * 图片名称
      */
     private String picName;

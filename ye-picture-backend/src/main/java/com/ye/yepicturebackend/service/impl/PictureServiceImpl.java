@@ -19,6 +19,7 @@ import com.ye.yepicturebackend.api.hunyuan.model.ImageAnalysisResult;
 import com.ye.yepicturebackend.common.DeleteRequest;
 import com.ye.yepicturebackend.config.CosClientConfig;
 import com.ye.yepicturebackend.constant.RabbitMQConstant;
+import com.ye.yepicturebackend.converter.PictureVoConverter;
 import com.ye.yepicturebackend.exception.BusinessException;
 import com.ye.yepicturebackend.exception.ErrorCode;
 import com.ye.yepicturebackend.exception.ThrowUtils;
@@ -58,9 +59,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.*;
@@ -116,6 +120,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private RabbitTemplate rabbitTemplate;
+
+    @Resource
+    private PictureVoConverter pictureVoConverter;
 
     // region 上传照片核心
 
@@ -201,7 +208,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
             return picture;
         });
-        return PictureVO.objToVo(picture);
+        return pictureVoConverter.toVo(picture);
     }
 
     /**
@@ -222,6 +229,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setUrl(uploadPictureResult.getUrl());
         picture.setCompressUrl(uploadPictureResult.getCompressUrl());
         picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
+        picture.setOriginKey(uploadPictureResult.getOriginKey());
+        picture.setCompressKey(uploadPictureResult.getCompressKey());
+        picture.setThumbnailKey(uploadPictureResult.getThumbnailKey());
         // 元信息赋值
         picture.setName((pictureUploadRequest != null
                 && StrUtil.isNotBlank(pictureUploadRequest.getPicName()))
@@ -313,7 +323,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      */
     @Override
     public PictureVO getPictureVO(Picture picture, HttpServletRequest request) {
-        PictureVO pictureVO = PictureVO.objToVo(picture);
+        PictureVO pictureVO = pictureVoConverter.toVo(picture);
         // 关联查询用户信息
         Long id = picture.getId();
         if (id != null && id > 0) {
@@ -344,7 +354,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         // 2. 实体列表转换为VO列表
         List<PictureVO> pictureVOList = pictureList.stream()
-                .map(PictureVO::objToVo)
+                .map(pictureVoConverter::toVo)
                 .collect(Collectors.toList());
         // 3. 获取查询用户信息
         // 批量收集用户 ID
@@ -1041,7 +1051,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         // 8. 转换为VO返回
         return filteredAndSortedPictures.stream()
-                .map(PictureVO::objToVo)
+                .map(pictureVoConverter::toVo)
                 .collect(Collectors.toList());
     }
 
@@ -1421,7 +1431,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     // endregion
-
 
 }
 

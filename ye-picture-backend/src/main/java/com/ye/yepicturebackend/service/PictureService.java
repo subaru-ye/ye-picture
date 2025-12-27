@@ -13,6 +13,7 @@ import com.ye.yepicturebackend.model.dto.picture.user.PictureEditRequest;
 import com.ye.yepicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ye.yepicturebackend.model.entity.User;
+import org.springframework.context.ApplicationContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
