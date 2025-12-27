@@ -10,6 +10,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 用户服务接口
@@ -114,5 +116,10 @@ public interface UserService extends IService<User> {
      * 若用户为null或角色为普通用户（userRole = "user"），返回false
      */
     boolean isAdmin(User user);
+
+    /**
+     * 批量根据用户 ID 获取 UserVO 映射（缺失的 ID 不包含在结果中）
+     */
+    Map<Long, UserVO> batchGetUserVOMap(Set<Long> userIds);
 
 }

@@ -7,12 +7,13 @@ package com.ye.yepicturebackend.service;
  * @author Ye
  */
 public interface CosUrlService {
+    /**
+     * 生成默认有效期的签名 URL
+     */
+    String generateDefaultSignedUrl(String key);
 
     /**
-     * 根据 COS Key 生成公开可访问的完整 URL
-     *
-     * @param key COS 对象的相对路径（如 "user/123/origin/xxx.png"）
-     * @return 完整 URL（如 "<a href="https://bucket.cos.region.myqcloud.com/user/123/origin/xxx.png">...</a>"）
+     * 生成指定有效期的签名 URL
      */
-    String buildPublicUrl(String key);
+    String generateSignedUrl(String key, long expireMillis);
 }

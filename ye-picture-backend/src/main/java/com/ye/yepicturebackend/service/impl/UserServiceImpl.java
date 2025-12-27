@@ -30,8 +30,7 @@ import org.springframework.util.DigestUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.ye.yepicturebackend.constant.UserConstant.USER_LOGIN_STATE;
@@ -313,6 +312,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean isAdmin(User user) {
         return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
+    }
+
+    @Override
+    public Map<Long, UserVO> batchGetUserVOMap(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return this.listByIds(userIds).stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        this::getUserVO, // 假设你已有 getUserVO(User) 方法
+                        (existing, replacement) -> existing
+                ));
     }
 
 }

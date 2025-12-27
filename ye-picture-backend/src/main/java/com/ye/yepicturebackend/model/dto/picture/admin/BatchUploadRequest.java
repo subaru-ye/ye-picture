@@ -9,7 +9,7 @@ import java.util.List;
  * 批量导入图片请求
  */
 @Data
-public class PictureUploadByBatchRequest implements Serializable {
+public class BatchUploadRequest implements Serializable {
 
     /**
      * 搜索词  

@@ -17,9 +17,9 @@ import com.ye.yepicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.ye.yepicturebackend.api.hunyuan.HunyuanImageAnalysis;
 import com.ye.yepicturebackend.api.hunyuan.model.ImageAnalysisResult;
 import com.ye.yepicturebackend.common.DeleteRequest;
-import com.ye.yepicturebackend.config.CosClientConfig;
 import com.ye.yepicturebackend.constant.RabbitMQConstant;
-import com.ye.yepicturebackend.converter.PictureVoConverter;
+import com.ye.yepicturebackend.constant.UserConstant;
+import com.ye.yepicturebackend.utils.PictureVoConverter;
 import com.ye.yepicturebackend.exception.BusinessException;
 import com.ye.yepicturebackend.exception.ErrorCode;
 import com.ye.yepicturebackend.exception.ThrowUtils;
@@ -37,12 +37,13 @@ import com.ye.yepicturebackend.model.dto.file.UploadPictureResult;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureUpdateRequest;
 import com.ye.yepicturebackend.model.dto.picture.shared.*;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureReviewRequest;
-import com.ye.yepicturebackend.model.dto.picture.admin.PictureUploadByBatchRequest;
+import com.ye.yepicturebackend.model.dto.picture.admin.BatchUploadRequest;
 import com.ye.yepicturebackend.model.dto.picture.user.PictureEditRequest;
 import com.ye.yepicturebackend.model.entity.Picture;
 import com.ye.yepicturebackend.model.entity.Space;
 import com.ye.yepicturebackend.model.entity.User;
 import com.ye.yepicturebackend.model.enums.PictureReviewStatusEnum;
+import com.ye.yepicturebackend.service.CosUrlService;
 import com.ye.yepicturebackend.service.PictureService;
 import com.ye.yepicturebackend.mapper.PictureMapper;
 import com.ye.yepicturebackend.mapper.PictureTagMapper;
@@ -59,19 +60,15 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -98,9 +95,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private CosManager cosManager;
 
     @Resource
-    private CosClientConfig cosClientConfig;
-
-    @Resource
     private TransactionTemplate transactionTemplate;
 
     @Resource
@@ -123,6 +117,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private PictureVoConverter pictureVoConverter;
+
+    @Resource
+    private CosUrlService cosUrlService;
 
     // region 上传照片核心
 
@@ -226,9 +223,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                                       PictureUploadRequest pictureUploadRequest) {
         Picture picture = new Picture();
         // 地址赋值
-        picture.setUrl(uploadPictureResult.getUrl());
-        picture.setCompressUrl(uploadPictureResult.getCompressUrl());
-        picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         picture.setOriginKey(uploadPictureResult.getOriginKey());
         picture.setCompressKey(uploadPictureResult.getCompressKey());
         picture.setThumbnailKey(uploadPictureResult.getThumbnailKey());
@@ -295,26 +289,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     /**
-     * 从 URL中提取对象存储的 key（相对路径）
-     *
-     * @param url 包含域名的完整 URL
-     * @return 对象存储的 key（相对路径）
-     */
-    private String extractCosKey(String url) {
-        // 构建腾讯云 COS 的基础域名
-        String baseUrl = String.format("https://%s.cos.%s.myqcloud.com",
-                cosClientConfig.getBucket(),
-                cosClientConfig.getRegion());
-
-        // 如果 URL 以基础域名开头，则截取域名后的部分作为 key
-        if (url.startsWith(baseUrl)) {
-            String key = url.substring(baseUrl.length());
-            return key.startsWith("/") ? key.substring(1) : key;
-        }
-        return url;
-    }
-
-    /**
      * （Picture）转换为（PictureVO）
      *
      * @param picture 数据库中的图片实体对象
@@ -343,49 +317,36 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      */
     @Override
     public Page<PictureVO> getPictureVOPage(Page<Picture> picturePage, HttpServletRequest request) {
-        List<Picture> pictureList = picturePage.getRecords();
-        // 1. 初始化分页对象
-        Page<PictureVO> pictureVOPage = new Page<>(
+        List<Picture> records = picturePage.getRecords();
+        Page<PictureVO> voPage = new Page<>(
                 picturePage.getCurrent(),
                 picturePage.getSize(),
-                picturePage.getTotal());
-        if (CollUtil.isEmpty(pictureList)) {
-            return pictureVOPage;
+                picturePage.getTotal()
+        );
+        if (records.isEmpty()) {
+            return voPage;
         }
-        // 2. 实体列表转换为VO列表
-        List<PictureVO> pictureVOList = pictureList.stream()
+
+        // 转换 VO
+        List<PictureVO> voList = records.stream()
                 .map(pictureVoConverter::toVo)
                 .collect(Collectors.toList());
-        // 3. 获取查询用户信息
-        // 批量收集用户 ID
-        Set<Long> userIdSet = pictureList.stream()
-                .map(Picture::getUserId)
+
+        // 批量查用户
+        Set<Long> userIds = voList.stream()
+                .map(PictureVO::getUserId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        // 构建ID到User的映射
-        Map<Long, User> userIdUserMap = userService.listByIds(userIdSet).stream()
-                .collect(Collectors.toMap(
-                        User::getId,
-                        Function.identity(),
-                        (existing, replacement) -> existing
-                ));
 
-        // 4. 为VO填充用户信息
-        pictureVOList.forEach(pictureVO -> {
-            Long userId = pictureVO.getUserId();
-            User user = userIdUserMap.get(userId);
-            pictureVO.setUser(Optional.ofNullable(user)
-                    .map(userService::getUserVO)
-                    // 空用户处理
-                    .orElseGet(() -> {
-                        UserVO defaultUser = new UserVO();
-                        defaultUser.setUserName("未知用户");
-                        defaultUser.setId(-1L);
-                        return defaultUser;
-                    }));
-        });
-        pictureVOPage.setRecords(pictureVOList);
-        return pictureVOPage;
+        Map<Long, UserVO> userVOMap = userService.batchGetUserVOMap(userIds);
+
+        // 填充用户（使用常量兜底）
+        voList.forEach(vo ->
+                vo.setUser(userVOMap.getOrDefault(vo.getUserId(), UserConstant.UNKNOWN_USER_VO))
+        );
+
+        voPage.setRecords(voList);
+        return voPage;
     }
 
     /**
@@ -398,12 +359,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         ThrowUtils.throwIf(picture == null, ErrorCode.PARAMS_ERROR);
         // 取值
         Long id = picture.getId();
-        String url = picture.getUrl();
+        String originKey = picture.getOriginKey();
         String introduction = picture.getIntroduction();
         // 校验
         ThrowUtils.throwIf(ObjUtil.isNull(id),
                 ErrorCode.PARAMS_ERROR, "id不能为空");
-        ThrowUtils.throwIf(StrUtil.isNotBlank(url) && url.length() > 1024,
+        ThrowUtils.throwIf(StrUtil.isNotBlank(originKey) && originKey.length() > 512,
                 ErrorCode.PARAMS_ERROR, "url过长");
         ThrowUtils.throwIf(StrUtil.isNotBlank(introduction) && introduction.length() > 800,
                 ErrorCode.PARAMS_ERROR, "简介过长");
@@ -534,7 +495,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             return true;
         });
         // 4. 执行对象存储清理
-        PictureFileDeleteResult fileDeleteResult = this.clearPictureFile(oldPicture);
+        DeletePictureResult fileDeleteResult = this.clearPictureFile(oldPicture);
         // 5. 构建删除结果Map
         Map<String, Object> resultMap = new HashMap<>(3);
         resultMap.put("dbDeleted", true);
@@ -550,60 +511,65 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      * @return 图片文件删除结果DTO
      */
     @Override
-    public PictureFileDeleteResult clearPictureFile(Picture oldPicture) {
-        // 参数校验
-        String originUrl = oldPicture.getUrl();
-        String compressUrl = oldPicture.getCompressUrl();
-        String thumbnailUrl = oldPicture.getThumbnailUrl();
-        ThrowUtils.throwIf(StrUtil.isBlank(originUrl),
-                ErrorCode.PARAMS_ERROR, "待删除的原图URL不能为空");
-        // 初始化删除结果对象
-        PictureFileDeleteResult deleteResult = new PictureFileDeleteResult();
-        deleteResult.setUrl(originUrl);
-        deleteResult.setCompressUrl(compressUrl);
-        deleteResult.setThumbnailUrl(thumbnailUrl);
+    public DeletePictureResult clearPictureFile(Picture oldPicture) {
+        // 参数校验：必须有 originKey
+        String originKey = oldPicture.getOriginKey();
+        String compressKey = oldPicture.getCompressKey();
+        String thumbnailKey = oldPicture.getThumbnailKey();
+
+        ThrowUtils.throwIf(StrUtil.isBlank(originKey),
+                ErrorCode.PARAMS_ERROR, "待删除的图片缺少 originKey，无法执行删除");
+
+        // 初始化结果（返回安全的 Key）
+        DeletePictureResult deleteResult = new DeletePictureResult();
+        deleteResult.setOriginKey(originKey);
+        deleteResult.setCompressKey(compressKey);
+        deleteResult.setThumbnailKey(thumbnailKey);
         deleteResult.setDeleted(false);
+
         StringBuilder resultMsg = new StringBuilder();
+
         try {
-            // 查询图片URL的引用次数
+            // 基于 originKey 查询引用次数（唯一标识）
             long originReferenceCount = this.lambdaQuery()
-                    .eq(Picture::getUrl, originUrl)
+                    .eq(Picture::getOriginKey, originKey)
                     .count();
-            // 若被多次引用，不执行删除操作
+
             if (originReferenceCount > 1) {
-                String msg = String.format("原图被%d条记录引用，不执行任何删除（原图URL：%s）",
-                        originReferenceCount, originUrl);
+                String msg = String.format("原图被 %d 条记录引用，不执行删除（originKey：%s）",
+                        originReferenceCount, originKey);
                 deleteResult.setMessage(msg);
                 log.info(msg);
                 return deleteResult;
             }
-            // 提取存储键
-            String originKey = extractCosKey(originUrl);
-            String compressKey = extractCosKey(compressUrl);
-            String thumbnailKey = StrUtil.isNotBlank(thumbnailUrl) ? extractCosKey(thumbnailUrl) : null;
-            // 删除原图
+
+            // 执行删除
             cosManager.deleteObject(originKey);
-            String originDeleteMsg = "原图删除成功";
-            resultMsg.append(originDeleteMsg).append("；");
-            // 删除压缩图
-            cosManager.deleteObject(compressKey);
-            String compressDeleteMsg = "压缩图删除成功";
-            resultMsg.append(compressDeleteMsg).append("；");
-            // 删除缩略图
-            if (StrUtil.isNotBlank(thumbnailUrl) && StrUtil.isNotBlank(thumbnailKey)) {
+            resultMsg.append("原图删除成功；");
+
+            if (StrUtil.isNotBlank(compressKey)) {
+                cosManager.deleteObject(compressKey);
+                resultMsg.append("压缩图删除成功；");
+            } else {
+                resultMsg.append("无压缩图可删除；");
+            }
+
+            if (StrUtil.isNotBlank(thumbnailKey)) {
                 cosManager.deleteObject(thumbnailKey);
-                String thumbnailDeleteMsg = "缩略图删除成功";
-                resultMsg.append(thumbnailDeleteMsg);
+                resultMsg.append("缩略图删除成功");
             } else {
                 resultMsg.append("无缩略图可删除");
             }
+
             deleteResult.setDeleted(true);
-            deleteResult.setMessage(resultMsg.toString().trim().replace("；$", ""));
+            deleteResult.setMessage(resultMsg.toString().trim().replaceAll("；$", ""));
+
         } catch (Exception e) {
-            String errorMsg = String.format("图片删除失败（原图URL：%s）：%s", originUrl, e.getMessage());
+            String errorMsg = String.format("图片删除失败（originKey：%s）：%s", originKey, e.getMessage());
             deleteResult.setMessage(errorMsg);
-            deleteResult.setDeleted(false);
+            log.error(errorMsg, e);
         }
+
         return deleteResult;
     }
 
@@ -818,7 +784,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     /**
      * 批量抓取网络图片
      *
-     * @param pictureUploadByBatchRequest 批量上传请求参数，包含：
+     * @param batchUploadRequest 批量上传请求参数，包含：
      *                                    - searchText：搜索关键词
      *                                    - count：需要创建的图片数量
      *                                    - namePrefix：图片名称前缀
@@ -827,23 +793,23 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      */
     @Override
     public Integer uploadPictureByBatch(
-            PictureUploadByBatchRequest pictureUploadByBatchRequest,
+            BatchUploadRequest batchUploadRequest,
             User loginUser) {
         // 1. 参数校验
-        ThrowUtils.throwIf(pictureUploadByBatchRequest == null,
+        ThrowUtils.throwIf(batchUploadRequest == null,
                 ErrorCode.PARAMS_ERROR);
-        String searchText = pictureUploadByBatchRequest.getSearchText();
-        Integer count = pictureUploadByBatchRequest.getCount();
+        String searchText = batchUploadRequest.getSearchText();
+        Integer count = batchUploadRequest.getCount();
         ThrowUtils.throwIf(count > 30, ErrorCode.PARAMS_ERROR, "最多一次性创建30条");
         // 名称前缀默认为搜索关键词
-        String namePrefix = pictureUploadByBatchRequest.getNamePrefix();
+        String namePrefix = batchUploadRequest.getNamePrefix();
         if (StrUtil.isBlank(namePrefix)) {
             namePrefix = searchText;
         }
 
         // 获取批量上传的统一分类和标签
-        String batchCategory = pictureUploadByBatchRequest.getCategory();
-        List<String> batchTags = pictureUploadByBatchRequest.getTags();
+        String batchCategory = batchUploadRequest.getCategory();
+        List<String> batchTags = batchUploadRequest.getTags();
 
         log.info("开始批量上传图片，搜索词: {}, 数量: {}, 分类: {}, 标签: {}",
                 searchText, count, batchCategory, batchTags);
@@ -1058,16 +1024,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     /**
      * 批量编辑图片信息（分类、标签、名称）
      *
-     * @param pictureEditByBatchRequest 批量编辑请求参数
+     * @param batchEditRequest 批量编辑请求参数
      * @param loginUser                 当前登录用户
      */
     @Override
-    public void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser) {
+    public void editPictureByBatch(BatchEditRequest batchEditRequest, User loginUser) {
         // 1. 提取并校验参数
-        List<Long> pictureIdList = pictureEditByBatchRequest.getPictureIdList();
-        Long spaceId = pictureEditByBatchRequest.getSpaceId();
-        String category = pictureEditByBatchRequest.getCategory();
-        List<String> tags = pictureEditByBatchRequest.getTags();
+        List<Long> pictureIdList = batchEditRequest.getPictureIdList();
+        Long spaceId = batchEditRequest.getSpaceId();
+        String category = batchEditRequest.getCategory();
+        List<String> tags = batchEditRequest.getTags();
         // 校验
         ThrowUtils.throwIf(CollUtil.isEmpty(pictureIdList) || spaceId == null,
                 ErrorCode.PARAMS_ERROR);
@@ -1102,7 +1068,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 picture.setTags(JSONUtil.toJsonStr(tags));
             }
             // 提取批量命名规则
-            String nameRule = pictureEditByBatchRequest.getNameRule();
+            String nameRule = batchEditRequest.getNameRule();
             fillPictureWithNameRule(pictureList, nameRule);
         });
 
@@ -1115,39 +1081,50 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     /**
      * AI扩图任务创建方法
      *
-     * @param createPictureOutPaintingTaskRequest 前端传递的图片扩展任务请求参数
+     * @param aiExtendRequest 前端传递的图片扩展任务请求参数
      *                                            包含待扩展的图片ID、AI扩展参数（如扩展比例、旋转角度、像素填充等）
      * @param loginUser                           当前登录用户信息
      * @return CreateOutPaintingTaskResponse 阿里云AI返回的扩展任务创建结果
      * 包含任务ID（taskId）和初始任务状态（如PENDING/RUNNING），用于后续查询任务结果
      */
     @Override
-    public CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser) {
-        log.info("进入图片扩图任务创建方法，请求参数：{}", JSONUtil.toJsonStr(createPictureOutPaintingTaskRequest));
+    public CreateOutPaintingTaskResponse createPictureOutPaintingTask(
+            AiExtendRequest aiExtendRequest,
+            User loginUser) {
+
+        log.info("进入图片扩图任务创建方法，请求参数：{}", JSONUtil.toJsonStr(aiExtendRequest));
+
         // 1. 获取并校验待扩展的图片信息
-        Long pictureId = createPictureOutPaintingTaskRequest.getPictureId();
+        Long pictureId = aiExtendRequest.getPictureId();
         Picture picture = Optional.ofNullable(this.getById(pictureId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_ERROR));
 
+        // 2. 确保 originKey 存在
+        String originKey = picture.getOriginKey();
+        ThrowUtils.throwIf(StrUtil.isBlank(originKey),
+                ErrorCode.PARAMS_ERROR, "图片缺少存储路径（originKey），无法用于扩图");
 
-        // 2. 组装阿里云AI图像扩展接口的请求参数
-        // 2.1 请求对象
+        // 3. 生成临时可访问 URL（阿里云需要公网可读）
+        String imageUrl = cosUrlService.generateSignedUrl(originKey ,3600 * 1000L);
+        ThrowUtils.throwIf(StrUtil.isBlank(imageUrl),
+                ErrorCode.SYSTEM_ERROR, "生成图片访问链接失败");
+
+        // 4. 组装阿里云AI图像扩展接口的请求参数
         CreateOutPaintingTaskRequest taskRequest = new CreateOutPaintingTaskRequest();
-        // 2.2 输入图像信息对象
         CreateOutPaintingTaskRequest.Input input = new CreateOutPaintingTaskRequest.Input();
-        // 组装
-        input.setImageUrl(picture.getUrl());
+        input.setImageUrl(imageUrl); // 使用临时 URL
         taskRequest.setInput(input);
 
-        // 2.3 复制前端请求中的扩展参数到AI请求对象
-        BeanUtils.copyProperties(createPictureOutPaintingTaskRequest, taskRequest);
-        // 在 PictureServiceImpl 的 createPictureOutPaintingTask 方法中，补充日志确认 taskRequest
+        // 5. 复制前端请求中的扩展参数
+        BeanUtils.copyProperties(aiExtendRequest, taskRequest);
+
         log.info("组装阿里云请求参数：model={}，imageUrl={}，x_scale={}，y_scale={}",
                 taskRequest.getModel(),
-                taskRequest.getInput().getImageUrl(),
+                imageUrl,
                 taskRequest.getParameters().getXScale(),
                 taskRequest.getParameters().getYScale());
-        // 3. 调用阿里云AI工具类的任务创建方法，发起HTTP请求并返回AI接口的响应结果
+
+        // 6. 调用阿里云 AI 接口
         return aliYunAiApi.createOutPaintingTask(taskRequest);
     }
 
@@ -1291,143 +1268,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         result.put("message", String.format("同步完成，新增标签 %d 个，新增分类 %d 个", newTagCount, newCategoryCount));
         log.info("标签和分类同步完成，新增标签：{} 个，新增分类：{} 个", newTagCount, newCategoryCount);
         return result;
-    }
-
-    @Override
-    public Map<String, Object> refreshPictureColors() {
-        log.info("开始批量刷新历史图片的主色调");
-
-        // 1. 查询所有没有主色调的图片
-        LambdaQueryWrapper<Picture> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.isNull(Picture::getPicColor)
-                .or()
-                .eq(Picture::getPicColor, "")
-                .isNotNull(Picture::getUrl)
-                .select(Picture::getId, Picture::getUrl);
-        List<Picture> picturesWithoutColor = this.list(queryWrapper);
-
-        if (CollUtil.isEmpty(picturesWithoutColor)) {
-            Map<String, Object> resultMap = new HashMap<>();
-            resultMap.put("totalCount", 0);
-            resultMap.put("successCount", 0);
-            resultMap.put("failCount", 0);
-            resultMap.put("message", "没有需要刷新主色调的图片");
-            return resultMap;
-        }
-
-        int totalCount = picturesWithoutColor.size();
-        int successCount = 0;
-        int failCount = 0;
-
-        log.info("找到 {} 张需要刷新主色调的图片", totalCount);
-
-        // 2. 批量处理图片，提取主色调
-        for (Picture picture : picturesWithoutColor) {
-            try {
-                // 从图片URL读取图片并计算平均颜色
-                String picColor = extractMainColorFromUrl(picture.getUrl());
-
-                if (StrUtil.isNotBlank(picColor)) {
-                    // 更新图片的主色调
-                    Picture updatePicture = new Picture();
-                    updatePicture.setId(picture.getId());
-                    updatePicture.setPicColor(picColor);
-                    boolean updateResult = this.updateById(updatePicture);
-
-                    if (updateResult) {
-                        successCount++;
-                        log.debug("成功刷新图片 {} 的主色调: {}", picture.getId(), picColor);
-                    } else {
-                        failCount++;
-                        log.warn("更新图片 {} 的主色调失败", picture.getId());
-                    }
-                } else {
-                    failCount++;
-                    log.warn("无法提取图片 {} 的主色调，URL: {}", picture.getId(), picture.getUrl());
-                }
-            } catch (Exception e) {
-                failCount++;
-                log.error("处理图片 {} 时发生异常，URL: {}", picture.getId(), picture.getUrl(), e);
-            }
-        }
-
-        // 3. 构建返回结果
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("totalCount", totalCount);
-        resultMap.put("successCount", successCount);
-        resultMap.put("failCount", failCount);
-        resultMap.put("message", String.format("刷新完成：总计 %d 张，成功 %d 张，失败 %d 张",
-                totalCount, successCount, failCount));
-
-        log.info("批量刷新主色调完成：总计 {} 张，成功 {} 张，失败 {} 张", totalCount, successCount, failCount);
-        return resultMap;
-    }
-
-    /**
-     * 从图片URL提取主色调
-     * 通过读取图片并计算所有像素的平均RGB值来获取主色调
-     *
-     * @param imageUrl 图片的URL地址
-     * @return 主色调的十六进制字符串（0xRRGGBB格式），如果提取失败返回null
-     */
-    private String extractMainColorFromUrl(String imageUrl) {
-        if (StrUtil.isBlank(imageUrl)) {
-            return null;
-        }
-
-        try {
-            // 1. 从URL读取图片
-            java.net.URI uri = new java.net.URI(imageUrl);
-            java.net.URL url = uri.toURL();
-            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(url);
-
-            if (image == null) {
-                log.warn("无法读取图片: {}", imageUrl);
-                return null;
-            }
-
-            // 2. 计算所有像素的平均RGB值
-            long totalRed = 0;
-            long totalGreen = 0;
-            long totalBlue = 0;
-            int pixelCount = 0;
-
-            int width = image.getWidth();
-            int height = image.getHeight();
-
-            // 为了性能考虑，可以采样计算（每N个像素采样一次）
-            int sampleStep = Math.max(1, Math.min(width, height) / 100); // 最多采样10000个像素点
-
-            for (int x = 0; x < width; x += sampleStep) {
-                for (int y = 0; y < height; y += sampleStep) {
-                    int rgb = image.getRGB(x, y);
-                    // 提取RGB值
-                    int red = (rgb >> 16) & 0xFF;
-                    int green = (rgb >> 8) & 0xFF;
-                    int blue = rgb & 0xFF;
-
-                    totalRed += red;
-                    totalGreen += green;
-                    totalBlue += blue;
-                    pixelCount++;
-                }
-            }
-
-            if (pixelCount == 0) {
-                return null;
-            }
-
-            // 3. 计算平均值并转换为十六进制格式
-            int avgRed = (int) (totalRed / pixelCount);
-            int avgGreen = (int) (totalGreen / pixelCount);
-            int avgBlue = (int) (totalBlue / pixelCount);
-
-            // 转换为0xRRGGBB格式（与COS返回格式一致）
-            return String.format("0x%02X%02X%02X", avgRed, avgGreen, avgBlue);
-        } catch (Exception e) {
-            log.error("从URL提取主色调失败: {}", imageUrl, e);
-            return null;
-        }
     }
 
     // endregion

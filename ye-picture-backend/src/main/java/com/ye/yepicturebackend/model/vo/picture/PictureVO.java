@@ -1,10 +1,7 @@
 package com.ye.yepicturebackend.model.vo.picture;
 
-import cn.hutool.json.JSONUtil;
-import com.ye.yepicturebackend.model.entity.Picture;
 import com.ye.yepicturebackend.model.vo.user.UserVO;
 import lombok.Data;
-import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -120,32 +117,4 @@ public class PictureVO implements Serializable {
     private List<String> permissionList = new ArrayList<>();
 
     private static final long serialVersionUID = -3328948051225772165L;
-
-//    /**
-//     * 封装类转对象
-//     */
-//    public static Picture voToObj(PictureVO pictureVO) {
-//        if (pictureVO == null) {
-//            return null;
-//        }
-//        Picture picture = new Picture();
-//        BeanUtils.copyProperties(pictureVO, picture);
-//        // 类型不同，需要转换
-//        picture.setTags(JSONUtil.toJsonStr(pictureVO.getTags()));
-//        return picture;
-//    }
-//
-//    /**
-//     * 对象转封装类
-//     */
-//    public static PictureVO objToVo(Picture picture) {
-//        if (picture == null) {
-//            return null;
-//        }
-//        PictureVO pictureVO = new PictureVO();
-//        BeanUtils.copyProperties(picture, pictureVO);
-//        // 类型不同，需要转换
-//        pictureVO.setTags(JSONUtil.toList(picture.getTags(), String.class));
-//        return pictureVO;
-//    }
 }

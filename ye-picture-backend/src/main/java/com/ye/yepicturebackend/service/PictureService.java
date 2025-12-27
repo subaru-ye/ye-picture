@@ -8,12 +8,11 @@ import com.ye.yepicturebackend.model.vo.picture.PictureVO;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureUpdateRequest;
 import com.ye.yepicturebackend.model.dto.picture.shared.*;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureReviewRequest;
-import com.ye.yepicturebackend.model.dto.picture.admin.PictureUploadByBatchRequest;
+import com.ye.yepicturebackend.model.dto.picture.admin.BatchUploadRequest;
 import com.ye.yepicturebackend.model.dto.picture.user.PictureEditRequest;
 import com.ye.yepicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ye.yepicturebackend.model.entity.User;
-import org.springframework.context.ApplicationContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -81,7 +80,7 @@ public interface PictureService extends IService<Picture> {
      * @param oldPicture 待删除的图片实体
      * @return 图片文件删除结果DTO
      */
-    PictureFileDeleteResult clearPictureFile(Picture oldPicture);
+    DeletePictureResult clearPictureFile(Picture oldPicture);
 
 
     // endregion
@@ -104,14 +103,14 @@ public interface PictureService extends IService<Picture> {
     /**
      * 批量抓取网络图片
      *
-     * @param pictureUploadByBatchRequest 批量上传请求参数，包含：
+     * @param batchUploadRequest 批量上传请求参数，包含：
      *                                    - searchText：搜索关键词
      *                                    - count：需要创建的图片数量
      *                                    - namePrefix：图片名称前缀
      * @param loginUser                   当前登录用户对象，用于记录图片上传者信息
      * @return Integer 实际成功上传并创建的图片数量
      */
-    Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser);
+    Integer uploadPictureByBatch(BatchUploadRequest batchUploadRequest, User loginUser);
 
     /**
      * 图片审核处理
@@ -190,10 +189,10 @@ public interface PictureService extends IService<Picture> {
     /**
      * 批量编辑图片信息（分类、标签、名称）
      *
-     * @param pictureEditByBatchRequest 批量编辑请求参数
+     * @param batchEditRequest 批量编辑请求参数
      * @param loginUser                 当前登录用户
      */
-    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
+    void editPictureByBatch(BatchEditRequest batchEditRequest, User loginUser);
 
     /**
      * AI扩图任务创建方法
@@ -204,7 +203,7 @@ public interface PictureService extends IService<Picture> {
      * @return CreateOutPaintingTaskResponse 阿里云AI返回的扩展任务创建结果
      * 包含任务ID（taskId）和初始任务状态（如PENDING/RUNNING），用于后续查询任务结果
      */
-    CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createOutPaintingTaskRequest,
+    CreateOutPaintingTaskResponse createPictureOutPaintingTask(AiExtendRequest createOutPaintingTaskRequest,
                                                                User loginUser);
 
     // endregion
@@ -235,18 +234,6 @@ public interface PictureService extends IService<Picture> {
      * - message: 操作结果描述
      */
     Map<String, Object> syncTagsAndCategoriesFromPublicPictures();
-
-    /**
-     * 批量刷新历史图片的主色调
-     * 查询所有没有主色调的图片，从图片URL读取图片并提取主色调，更新到数据库
-     *
-     * @return Map<String, Object> 刷新结果：
-     * - totalCount: 需要刷新的图片总数
-     * - successCount: 成功刷新的图片数量
-     * - failCount: 刷新失败的图片数量
-     * - message: 操作结果描述
-     */
-    Map<String, Object> refreshPictureColors();
 
     // endregion
 

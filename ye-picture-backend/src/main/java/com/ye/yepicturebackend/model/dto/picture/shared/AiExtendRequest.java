@@ -9,7 +9,7 @@ import java.io.Serializable;
  * AI扩图请求类
  */
 @Data
-public class CreatePictureOutPaintingTaskRequest implements Serializable {
+public class AiExtendRequest implements Serializable {
 
     /**
      * 图片 id

@@ -26,7 +26,7 @@ import com.ye.yepicturebackend.model.vo.picture.PictureTagCategory;
 import com.ye.yepicturebackend.model.vo.picture.PictureVO;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureReviewRequest;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureUpdateRequest;
-import com.ye.yepicturebackend.model.dto.picture.admin.PictureUploadByBatchRequest;
+import com.ye.yepicturebackend.model.dto.picture.admin.BatchUploadRequest;
 import com.ye.yepicturebackend.model.dto.picture.shared.*;
 import com.ye.yepicturebackend.model.dto.picture.user.PictureEditRequest;
 import com.ye.yepicturebackend.model.dto.space.SpaceLevel;
@@ -34,6 +34,7 @@ import com.ye.yepicturebackend.model.entity.Picture;
 import com.ye.yepicturebackend.model.entity.User;
 import com.ye.yepicturebackend.model.enums.PictureReviewStatusEnum;
 import com.ye.yepicturebackend.model.enums.SpaceLevelEnum;
+import com.ye.yepicturebackend.service.CosUrlService;
 import com.ye.yepicturebackend.service.PictureService;
 import com.ye.yepicturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +66,9 @@ public class PictureController {
 
     @Resource
     private AliYunAiApi aliYunAiApi;
+
+    @Resource
+    private CosUrlService cosUrlService;
 
     // region 上传照片核心
 
@@ -123,7 +127,7 @@ public class PictureController {
     /**
      * 批量抓取并创建图片
      *
-     * @param pictureUploadByBatchRequest 请求体参数，包含：
+     * @param batchUploadRequest 请求体参数，包含：
      *                                    - searchText：图片搜索关键词
      *                                    - count：需要批量创建的图片数量
      *                                    - namePrefix：图片名称前缀
@@ -137,12 +141,12 @@ public class PictureController {
     @PostMapping("/upload/batch")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Integer> uploadPictureByBatch(
-            @RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,
+            @RequestBody BatchUploadRequest batchUploadRequest,
             HttpServletRequest request) {
         // 1. 获取参数
         User loginUser = userService.getLoginUser(request);
         // 2. 执行service
-        int uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
+        int uploadCount = pictureService.uploadPictureByBatch(batchUploadRequest, loginUser);
         // 3. 返回结果
         return ResultUtils.success(uploadCount);
     }
@@ -303,20 +307,6 @@ public class PictureController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Map<String, Object>> syncTagsAndCategoriesFromPublicPictures() {
         Map<String, Object> result = pictureService.syncTagsAndCategoriesFromPublicPictures();
-        return ResultUtils.success(result);
-    }
-
-    /**
-     * 批量刷新历史图片的主色调
-     * 查询所有没有主色调的图片，从图片URL读取图片并提取主色调，更新到数据库
-     *
-     * @return BaseResponse<Map<String, Object>> 接口响应对象：
-     * - 成功：返回{success: true, data: {totalCount: 总数, successCount: 成功数, failCount: 失败数, message: "..."}}
-     */
-    @PostMapping("/refresh/colors")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Map<String, Object>> refreshPictureColors() {
-        Map<String, Object> result = pictureService.refreshPictureColors();
         return ResultUtils.success(result);
     }
 
@@ -510,12 +500,23 @@ public class PictureController {
         ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
         Long pictureId = searchPictureByPictureRequest.getPictureId();
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+
         // 2. 查询图片是否存在
-        Picture oldPicture = pictureService.getById(pictureId);
-        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 3. 调用api查询
-        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(oldPicture.getUrl());
-        // 4. 返回结果
+        Picture picture = pictureService.getById(pictureId);
+        ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+
+        // 3. 获取 originKey 并生成临时可访问 URL
+        String originKey = picture.getOriginKey();
+        ThrowUtils.throwIf(StrUtil.isBlank(originKey), ErrorCode.SYSTEM_ERROR, "图片存储路径缺失");
+
+        // 生成较短有效期的签名 URL
+        String temporaryImageUrl = cosUrlService.generateSignedUrl(originKey, 5 * 60 * 1000L);
+        ThrowUtils.throwIf(temporaryImageUrl == null, ErrorCode.SYSTEM_ERROR, "无法生成图片访问链接");
+
+        // 4. 调用图像搜索 API
+        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(temporaryImageUrl);
+
+        // 5. 返回结果
         return ResultUtils.success(resultList);
     }
 
@@ -547,22 +548,22 @@ public class PictureController {
     /**
      * 批量编辑图片信息
      *
-     * @param pictureEditByBatchRequest 前端传递的批量编辑请求体
+     * @param batchEditRequest 前端传递的批量编辑请求体
      * @param request                   HttpServletRequest对象
      * @return BaseResponse<Boolean> 统一响应体，成功时返回true，失败时返回错误信息
      */
     @PostMapping("/edit/batch")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPictureByBatch(
-            @RequestBody PictureEditByBatchRequest pictureEditByBatchRequest,
+            @RequestBody BatchEditRequest batchEditRequest,
             HttpServletRequest request) {
         // 1. 提取并校验参数
-        ThrowUtils.throwIf(pictureEditByBatchRequest == null,
+        ThrowUtils.throwIf(batchEditRequest == null,
                 ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
 
         // 2. 调用Service
-        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
+        pictureService.editPictureByBatch(batchEditRequest, loginUser);
 
         // 3. 返回结果
         return ResultUtils.success(true);
@@ -571,7 +572,7 @@ public class PictureController {
     /**
      * 创建AI图像扩展任务
      *
-     * @param createPictureOutPaintingTaskRequest 前端传递的AI扩图任务请求体
+     * @param aiExtendRequest 前端传递的AI扩图任务请求体
      *                                            必须包含待扩展的图片ID，可选包含扩图参数
      * @param request                             HttpServletRequest对象
      * @return BaseResponse<CreateOutPaintingTaskResponse> 统一格式的接口响应
@@ -581,17 +582,17 @@ public class PictureController {
     @PostMapping("/out_painting/create_task")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(
-            @RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest,
+            @RequestBody AiExtendRequest aiExtendRequest,
             HttpServletRequest request) {
         // 1. 基础参数校验
-        ThrowUtils.throwIf(createPictureOutPaintingTaskRequest == null ||
-                        createPictureOutPaintingTaskRequest.getPictureId() == null,
+        ThrowUtils.throwIf(aiExtendRequest == null ||
+                        aiExtendRequest.getPictureId() == null,
                 ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
 
         // 2. 调用Service
         CreateOutPaintingTaskResponse response = pictureService
-                .createPictureOutPaintingTask(createPictureOutPaintingTaskRequest, loginUser);
+                .createPictureOutPaintingTask(aiExtendRequest, loginUser);
 
         // 3. 返回结果
         return ResultUtils.success(response);

@@ -21,21 +21,6 @@ public class Picture implements Serializable {
     private Long id;
 
     /**
-     * 原图片 url
-     */
-    private String url;
-
-    /**
-     * 压缩图 url
-     */
-    private String compressUrl;
-
-    /**
-     * 缩略图 url
-     */
-    private String thumbnailUrl;
-
-    /**
      * 原图 COS 相对路径（Key）
      */
     private String originKey;

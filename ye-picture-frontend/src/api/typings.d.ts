@@ -351,13 +351,14 @@ declare namespace API {
 
   type Picture = {
     category?: string
-    compressUrl?: string
+    compressKey?: string
     createTime?: string
     editTime?: string
     id?: number
     introduction?: string
     isDelete?: number
     name?: string
+    originKey?: string
     picColor?: string
     picFormat?: string
     picHeight?: number
@@ -370,9 +371,8 @@ declare namespace API {
     reviewerId?: number
     spaceId?: number
     tags?: string
-    thumbnailUrl?: string
+    thumbnailKey?: string
     updateTime?: string
-    url?: string
     userId?: number
   }
 

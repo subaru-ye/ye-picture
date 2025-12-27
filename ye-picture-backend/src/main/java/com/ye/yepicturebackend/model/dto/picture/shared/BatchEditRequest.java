@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class PictureEditByBatchRequest implements Serializable {
+public class BatchEditRequest implements Serializable {
 
     /**
      * 图片 id 列表

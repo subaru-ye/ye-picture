@@ -129,15 +129,9 @@ public abstract class PictureUploadTemplate {
             result.setPicSize(0L);
         }
 
-        // ====== 阶段 1 双写逻辑开始 ======
-        // 1. 旧字段：仍然生成完整 URL（兼容）
-        String fullUrl = buildCosAccessUrl(originUploadPath);
-        result.setUrl(fullUrl);
-
-        // 2. 新字段：存储标准化的 COS Key（去掉前导 /）
+        // 存储标准化的 COS Key
         String normalizedKey = originUploadPath.startsWith("/") ? originUploadPath.substring(1) : originUploadPath;
         result.setOriginKey(normalizedKey);
-        // ====== 阶段 1 双写逻辑结束 ======
     }
 
     /**
@@ -153,34 +147,10 @@ public abstract class PictureUploadTemplate {
         }
         CIObject compressCiObj = ciObjectList.get(0);
         CIObject thumbnailCiObj = ciObjectList.size() > 1 ? ciObjectList.get(1) : compressCiObj;
-        // ====== 阶段 1 双写逻辑开始 ======
-        // 1. 旧字段：仍然生成完整 URL（兼容）
-        result.setCompressUrl(buildCosAccessUrl(compressCiObj.getKey()));
-        result.setThumbnailUrl(buildCosAccessUrl(thumbnailCiObj.getKey()));
 
-        // 2. 新字段：直接存储 COS Key（CI 返回的 key 已无前导 /）
+        // 直接存储 COS Key
         result.setCompressKey(compressCiObj.getKey());
         result.setThumbnailKey(thumbnailCiObj.getKey());
-        // ====== 阶段 1 双写逻辑结束 ======
-    }
-
-    /**
-     * 构建COS图片访问URL
-     *
-     * @param cosObjectKey 图片在COS的存储路径
-     * @return 可直接访问的图片URL
-     */
-    private String buildCosAccessUrl(String cosObjectKey) {
-        if (StrUtil.isBlank(cosObjectKey)) {
-            return null;
-        }
-        // 处理路径前缀斜杠（避免URL出现"//"）
-        String normalizedKey = cosObjectKey.startsWith("/") ? cosObjectKey.substring(1) : cosObjectKey;
-        // 拼接COS基础URL（从配置读取桶名和区域，避免硬编码）
-        return String.format("https://%s.cos.%s.myqcloud.com/%s",
-                cosClientConfig.getBucket(),
-                cosClientConfig.getRegion(),
-                normalizedKey);
     }
 
     /**

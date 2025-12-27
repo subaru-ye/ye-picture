@@ -166,14 +166,6 @@ export async function getPictureOutPaintingTaskUsingGet(
   )
 }
 
-/** refreshPictureColors POST /api/picture/refresh/colors */
-export async function refreshPictureColorsUsingPost(options?: { [key: string]: any }) {
-  return request<API.BaseResponseMapStringObject_>('/api/picture/refresh/colors', {
-    method: 'POST',
-    ...(options || {}),
-  })
-}
-
 /** doPictureReview POST /api/picture/review */
 export async function doPictureReviewUsingPost(
   body: API.PictureReviewRequest,

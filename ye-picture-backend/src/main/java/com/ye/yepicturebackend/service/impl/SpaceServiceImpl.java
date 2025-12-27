@@ -1,6 +1,5 @@
 package com.ye.yepicturebackend.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -8,6 +7,7 @@ import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ye.yepicturebackend.common.DeleteRequest;
+import com.ye.yepicturebackend.constant.UserConstant;
 import com.ye.yepicturebackend.exception.BusinessException;
 import com.ye.yepicturebackend.exception.ErrorCode;
 import com.ye.yepicturebackend.exception.ThrowUtils;
@@ -39,7 +39,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -459,51 +458,34 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
      * @param request   HTTP请求对象
      * @return Page<SpaceVO> 前端可直接渲染的空间VO分页对象
      */
-    @Override
     public Page<SpaceVO> getSpaceVOPage(Page<Space> spacePage, HttpServletRequest request) {
-        List<Space> spaceList = spacePage.getRecords();
-        // 1. 初始化分页对象
-        Page<SpaceVO> spaceVOPage = new Page<>(
+        List<Space> records = spacePage.getRecords();
+        Page<SpaceVO> voPage = new Page<>(
                 spacePage.getCurrent(),
                 spacePage.getSize(),
-                spacePage.getTotal());
-        if (CollUtil.isEmpty(spaceList)) {
-            return spaceVOPage;
+                spacePage.getTotal()
+        );
+        if (records.isEmpty()) {
+            return voPage;
         }
-        // 2. 实体列表转换为VO列表
-        List<SpaceVO> spaceVOList = spaceList.stream()
+
+        List<SpaceVO> voList = records.stream()
                 .map(SpaceVO::objToVo)
                 .collect(Collectors.toList());
-        // 3. 获取查询用户信息
-        // 批量收集用户 ID
-        Set<Long> userIdSet = spaceList.stream()
-                .map(Space::getUserId)
+
+        Set<Long> userIds = voList.stream()
+                .map(SpaceVO::getUserId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        // 构建ID到User的映射
-        Map<Long, User> userIdUserMap = userService.listByIds(userIdSet).stream()
-                .collect(Collectors.toMap(
-                        User::getId,
-                        Function.identity(),
-                        (existing, replacement) -> existing
-                ));
 
-        // 4. 为VO填充用户信息
-        spaceVOList.forEach(spaceVO -> {
-            Long userId = spaceVO.getUserId();
-            User user = userIdUserMap.get(userId);
-            spaceVO.setUser(Optional.ofNullable(user)
-                    .map(userService::getUserVO)
-                    // 空用户处理
-                    .orElseGet(() -> {
-                        UserVO defaultUser = new UserVO();
-                        defaultUser.setUserName("未知用户");
-                        defaultUser.setId(-1L);
-                        return defaultUser;
-                    }));
-        });
-        spaceVOPage.setRecords(spaceVOList);
-        return spaceVOPage;
+        Map<Long, UserVO> userVOMap = userService.batchGetUserVOMap(userIds);
+
+        voList.forEach(vo ->
+                vo.setUser(userVOMap.getOrDefault(vo.getUserId(), UserConstant.UNKNOWN_USER_VO))
+        );
+
+        voPage.setRecords(voList);
+        return voPage;
     }
 
     /**
