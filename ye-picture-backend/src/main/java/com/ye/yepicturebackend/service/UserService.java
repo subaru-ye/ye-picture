@@ -1,8 +1,8 @@
 package com.ye.yepicturebackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.ye.yepicturebackend.model.vo.LoginUserVO;
-import com.ye.yepicturebackend.model.vo.UserVO;
+import com.ye.yepicturebackend.model.vo.user.LoginUserVO;
+import com.ye.yepicturebackend.model.vo.user.UserVO;
 import com.ye.yepicturebackend.model.dto.user.UserQueryRequest;
 import com.ye.yepicturebackend.model.dto.user.UserRegisterRequest;
 import com.ye.yepicturebackend.model.entity.User;

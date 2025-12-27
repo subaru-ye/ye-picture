@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.vo;
+package com.ye.yepicturebackend.model.vo.user;
 
 import lombok.Data;
 
@@ -35,6 +35,11 @@ public class UserVO implements Serializable {
      * 用户简介
      */
     private String userProfile;
+
+    /**
+     * 用户邮箱
+     */
+    private String userEmail;
 
     /**
      * 用户角色：user/admin

@@ -14,7 +14,7 @@ import com.ye.yepicturebackend.model.dto.spaceuser.SpaceUserEditRequest;
 import com.ye.yepicturebackend.model.dto.spaceuser.SpaceUserQueryRequest;
 import com.ye.yepicturebackend.model.entity.SpaceUser;
 import com.ye.yepicturebackend.model.entity.User;
-import com.ye.yepicturebackend.model.vo.SpaceUserVO;
+import com.ye.yepicturebackend.model.vo.space.SpaceUserVO;
 import com.ye.yepicturebackend.service.SpaceUserService;
 import com.ye.yepicturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;

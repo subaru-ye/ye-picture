@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ye.yepicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.ye.yepicturebackend.common.DeleteRequest;
-import com.ye.yepicturebackend.model.vo.PictureVO;
+import com.ye.yepicturebackend.model.vo.picture.PictureVO;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureUpdateRequest;
 import com.ye.yepicturebackend.model.dto.picture.shared.*;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureReviewRequest;

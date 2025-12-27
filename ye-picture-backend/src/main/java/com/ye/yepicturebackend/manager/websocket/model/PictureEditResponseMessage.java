@@ -1,6 +1,6 @@
 package com.ye.yepicturebackend.manager.websocket.model;
 
-import com.ye.yepicturebackend.model.vo.UserVO;
+import com.ye.yepicturebackend.model.vo.user.UserVO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

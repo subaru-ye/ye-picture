@@ -1,7 +1,8 @@
-package com.ye.yepicturebackend.model.vo;
+package com.ye.yepicturebackend.model.vo.picture;
 
 import cn.hutool.json.JSONUtil;
 import com.ye.yepicturebackend.model.entity.Picture;
+import com.ye.yepicturebackend.model.vo.user.UserVO;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 

@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.vo;
+package com.ye.yepicturebackend.model.vo.picture;
 
 
 import lombok.Data;

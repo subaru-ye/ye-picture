@@ -18,6 +18,7 @@ import com.ye.yepicturebackend.api.hunyuan.HunyuanImageAnalysis;
 import com.ye.yepicturebackend.api.hunyuan.model.ImageAnalysisResult;
 import com.ye.yepicturebackend.common.DeleteRequest;
 import com.ye.yepicturebackend.config.CosClientConfig;
+import com.ye.yepicturebackend.constant.RabbitMQConstant;
 import com.ye.yepicturebackend.exception.BusinessException;
 import com.ye.yepicturebackend.exception.ErrorCode;
 import com.ye.yepicturebackend.exception.ThrowUtils;
@@ -28,8 +29,9 @@ import com.ye.yepicturebackend.manager.auth.model.SpaceUserPermissionConstant;
 import com.ye.yepicturebackend.manager.upload.FilePictureUpload;
 import com.ye.yepicturebackend.manager.upload.PictureUploadTemplate;
 import com.ye.yepicturebackend.manager.upload.UrlPictureUpload;
-import com.ye.yepicturebackend.model.vo.PictureVO;
-import com.ye.yepicturebackend.model.vo.UserVO;
+import com.ye.yepicturebackend.model.dto.picture.admin.ReviewNoticeMessage;
+import com.ye.yepicturebackend.model.vo.picture.PictureVO;
+import com.ye.yepicturebackend.model.vo.user.UserVO;
 import com.ye.yepicturebackend.model.dto.file.UploadPictureResult;
 import com.ye.yepicturebackend.model.dto.picture.admin.PictureUpdateRequest;
 import com.ye.yepicturebackend.model.dto.picture.shared.*;
@@ -54,8 +56,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -111,6 +113,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private HunyuanImageAnalysis hunyuanImageAnalysis;
+
+    @Resource
+    private RabbitTemplate rabbitTemplate;
 
     // region 上传照片核心
 
@@ -420,11 +425,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         ThrowUtils.throwIf(StrUtil.isBlank(reviewMessage) &&
                         PictureReviewStatusEnum.REJECT.equals(reviewStatusEnum),
                 ErrorCode.PARAMS_ERROR, "拒绝审核需填写拒绝原因");
-        // 判断图片是否存在
+        // 获取原图片
         Picture oldPicture = this.getById(id);
         ThrowUtils.throwIf(oldPicture == null,
                 ErrorCode.NOT_FOUND_ERROR, "图片不存在");
-        // 判断审核状态是否重复
         ThrowUtils.throwIf(oldPicture.getReviewStatus().equals(reviewStatus),
                 ErrorCode.PARAMS_ERROR, "请勿重复审核");
         // 数据库操作
@@ -435,6 +439,24 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         updatePicture.setReviewMessage(reviewMessage);
         boolean result = this.updateById(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        // 审核成功后，发送异步通知消息
+        try {
+            ReviewNoticeMessage message = new ReviewNoticeMessage();
+            message.setPictureId(id);
+            message.setUserId(oldPicture.getUserId());
+            message.setReviewStatus(reviewStatus);
+            message.setReviewMessage(reviewMessage);
+            message.setReviewerId(loginUser.getId());
+
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConstant.REVIEW_NOTICE_EXCHANGE,
+                    RabbitMQConstant.REVIEW_NOTICE_ROUTING_KEY,
+                    message
+            );
+            log.info("审核通知消息已发送, pictureId={}, userId={}", id, oldPicture.getUserId());
+        } catch (Exception e) {
+            log.warn("发送审核通知消息失败，pictureId={}", id, e);
+        }
     }
 
     /**
@@ -1207,8 +1229,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                     }
                 } catch (Exception e) {
                     log.warn("解析图片标签失败，图片ID：{}，标签内容：{}",
-                            picture != null ? picture.getId() : "unknown",
-                            picture != null ? picture.getTags() : "null", e);
+                            picture.getId(),
+                            picture.getTags(), e);
                 }
             }
         }
@@ -1391,9 +1413,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             int avgBlue = (int) (totalBlue / pixelCount);
 
             // 转换为0xRRGGBB格式（与COS返回格式一致）
-            String hexColor = String.format("0x%02X%02X%02X", avgRed, avgGreen, avgBlue);
-
-            return hexColor;
+            return String.format("0x%02X%02X%02X", avgRed, avgGreen, avgBlue);
         } catch (Exception e) {
             log.error("从URL提取主色调失败: {}", imageUrl, e);
             return null;

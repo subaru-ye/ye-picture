@@ -26,6 +26,10 @@
           <a-descriptions-item label="账号">
             {{ loginUser?.userAccount || '-' }}
           </a-descriptions-item>
+          <!-- 新增邮箱显示项 -->
+          <a-descriptions-item label="个人邮箱">
+            {{ loginUser?.userEmail || '-' }}
+          </a-descriptions-item>
           <a-descriptions-item label="个性签名">
             {{ loginUser?.userProfile || '-' }}
           </a-descriptions-item>
@@ -59,14 +63,19 @@
             <a-input v-model:value="formState.userAccount" placeholder="请输入账号" allow-clear />
           </a-form-item>
 
+          <!-- 新增邮箱编辑项 -->
+          <a-form-item label="个人邮箱" name="userEmail">
+            <a-input v-model:value="formState.userEmail" placeholder="请输入个人邮箱" allow-clear />
+          </a-form-item>
+
           <a-form-item label="密码" name="userPassword" :rules="[{ min: 8, message: '密码不能小于 8 位' }]">
             <a-input-password v-model:value="formState.userPassword" placeholder="请输入新密码（不修改可留空）" allow-clear />
           </a-form-item>
 
           <a-form-item label="个性签名" name="userProfile">
             <a-textarea v-model:value="formState.userProfile" :rows="4" placeholder="介绍一下自己吧" allow-clear />
-      </a-form-item>
-    </a-form>
+          </a-form-item>
+        </a-form>
       </div>
     </a-card>
   </div>
@@ -102,6 +111,8 @@ const formState = reactive<{
   userProfile?: string
   userAccount?: string
   userPassword?: string
+  // 添加 userEmail 字段
+  userEmail?: string
 }>({})
 
 watch(
@@ -114,6 +125,8 @@ watch(
       formState.userName = val.userName
       formState.userProfile = val.userProfile
       formState.userAccount = val.userAccount
+      // 同步邮箱
+      formState.userEmail = val.userEmail
       formState.userPassword = undefined
     }
   },
@@ -137,12 +150,19 @@ const enterEdit = () => {
   formState.userName = loginUser.value.userName
   formState.userProfile = loginUser.value.userProfile
   formState.userAccount = loginUser.value.userAccount
+  // 同步邮箱
+  formState.userEmail = loginUser.value.userEmail
   formState.userPassword = undefined
   isEditing.value = true
 }
 
 const onCancel = () => {
   isEditing.value = false
+  // 取消编辑时，将当前登录用户信息重新同步到表单状态，以丢弃未保存的更改
+  if (loginUser.value) {
+    formState.userEmail = loginUser.value.userEmail;
+    // 如果还有其他字段需要重置，也在这里添加
+  }
 }
 
 function formatDateTime(input?: string) {
@@ -166,6 +186,8 @@ const onSubmit = async () => {
       userName: formState.userName,
       userProfile: formState.userProfile,
       userAccount: formState.userAccount,
+      // 添加邮箱到提交的载荷中
+      userEmail: formState.userEmail,
       userPassword: formState.userPassword || undefined,
     }
     const res = await userEditUsingPost(payload)
@@ -175,7 +197,7 @@ const onSubmit = async () => {
       formState.userPassword = undefined
       message.success('资料保存成功')
       isEditing.value = false
-  } else {
+    } else {
       message.error('保存失败，' + res.data.message)
     }
   } catch (e) {

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ye.yepicturebackend.mapper.SysNoticeMapper">
+
+    <resultMap id="BaseResultMap" type="com.ye.yepicturebackend.model.entity.SysNotice">
+        <id property="id" column="id" />
+        <result property="userId" column="userId" />
+        <result property="pictureId" column="pictureId" />
+        <result property="noticeType" column="noticeType" />
+        <result property="noticeContent" column="noticeContent" />
+        <result property="noticeStatus" column="noticeStatus" />
+        <result property="readStatus" column="readStatus" />
+        <result property="reviewStatus" column="reviewStatus" />
+        <result property="sendTime" column="sendTime" />
+        <result property="createTime" column="createTime" />
+        <result property="updateTime" column="updateTime" />
+        <result property="isDelete" column="isDelete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,userId,pictureId,noticeType,noticeContent,
+        noticeStatus,readStatus,reviewStatus,sendTime,createTime,
+        updateTime,isDelete
+    </sql>
+
+</mapper>

@@ -107,6 +107,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponsePageReviewNoticeVO_ = {
+    code?: number
+    data?: PageReviewNoticeVO_
+    message?: string
+  }
+
   type BaseResponsePageSpace_ = {
     code?: number
     data?: PageSpace_
@@ -240,15 +246,28 @@ declare namespace API {
     thumbUrl?: string
   }
 
+  type listNoticesUsingGETParams = {
+    /** page */
+    page?: number
+    /** size */
+    size?: number
+  }
+
   type LoginUserVO = {
     createTime?: string
     id?: number
     updateTime?: string
     userAccount?: string
     userAvatar?: string
+    userEmail?: string
     userName?: string
     userProfile?: string
     userRole?: string
+  }
+
+  type markAsReadUsingPOSTParams = {
+    /** id */
+    id: number
   }
 
   type Output = {
@@ -280,6 +299,14 @@ declare namespace API {
     current?: number
     pages?: number
     records?: PictureVO[]
+    size?: number
+    total?: number
+  }
+
+  type PageReviewNoticeVO_ = {
+    current?: number
+    pages?: number
+    records?: ReviewNoticeVO[]
     size?: number
     total?: number
   }
@@ -319,9 +346,7 @@ declare namespace API {
     rightOffset?: number
     topOffset?: number
     xScale?: number
-    xscale?: number
     yScale?: number
-    yscale?: number
   }
 
   type Picture = {
@@ -452,6 +477,18 @@ declare namespace API {
     updateTime?: string
     url?: string
     user?: UserVO
+    userId?: number
+  }
+
+  type ReviewNoticeVO = {
+    createTime?: string
+    id?: number
+    isRead?: number
+    noticeType?: string
+    pictureId?: number
+    pictureTitle?: string
+    reviewMessage?: string
+    reviewStatus?: number
     userId?: number
   }
 
@@ -663,6 +700,7 @@ declare namespace API {
     updateTime?: string
     userAccount?: string
     userAvatar?: string
+    userEmail?: string
     userName?: string
     userPassword?: string
     userProfile?: string
@@ -672,6 +710,7 @@ declare namespace API {
   type UserAddRequest = {
     userAccount?: string
     userAvatar?: string
+    userEmail?: string
     userName?: string
     userProfile?: string
     userRole?: string
@@ -680,6 +719,7 @@ declare namespace API {
   type UserEditRequest = {
     userAccount?: string
     userAvatar?: string
+    userEmail?: string
     userName?: string
     userPassword?: string
     userProfile?: string
@@ -711,6 +751,7 @@ declare namespace API {
   type UserUpdateRequest = {
     id?: number
     userAvatar?: string
+    userEmail?: string
     userName?: string
     userProfile?: string
     userRole?: string
@@ -721,6 +762,7 @@ declare namespace API {
     id?: number
     userAccount?: string
     userAvatar?: string
+    userEmail?: string
     userName?: string
     userProfile?: string
     userRole?: string

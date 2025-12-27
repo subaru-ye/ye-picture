@@ -36,6 +36,11 @@ public class UserEditRequest implements Serializable {
      */
     private String userProfile;
 
+    /**
+     * 用户邮箱
+     */
+    private String userEmail;
+
     private static final long serialVersionUID = 2973991595757692690L;
 
 }

@@ -15,6 +15,7 @@ import SpaceDetailPage from '@/pages/space/SpaceDetailPage.vue'
 import SearchPicturePage from '@/pages/picture/SearchPicturePage.vue'
 import SpaceAnalyzePage from '@/pages/space/SpaceAnalyzePage.vue'
 import SpaceUserManagePage from '@/pages/admin/SpaceUserManagePage.vue'
+import UserMessagesPage from '@/pages/user/UserMessagesPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
       path: '/user/center',
       name: '用户中心',
       component: UserCenterPage,
+    },
+    {
+      path: '/user/messages',
+      name: '我的消息',
+      component: UserMessagesPage,
     },
     {
       path: '/admin/userManage',

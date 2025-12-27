@@ -10,7 +10,7 @@ import com.ye.yepicturebackend.constant.UserConstant;
 import com.ye.yepicturebackend.exception.ErrorCode;
 import com.ye.yepicturebackend.exception.ThrowUtils;
 import com.ye.yepicturebackend.manager.auth.SpaceUserAuthManager;
-import com.ye.yepicturebackend.model.vo.SpaceVO;
+import com.ye.yepicturebackend.model.vo.space.SpaceVO;
 
 import com.ye.yepicturebackend.model.dto.space.SpaceAddRequest;
 import com.ye.yepicturebackend.model.dto.space.SpaceEditRequest;

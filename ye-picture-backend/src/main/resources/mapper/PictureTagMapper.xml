@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ye.yepicturebackend.mapper.PictureTagMapper">
+
+    <resultMap id="BaseResultMap" type="com.ye.yepicturebackend.model.entity.PictureTag">
+        <id property="id" column="id"/>
+        <result property="tagName" column="tagName"/>
+        <result property="sortOrder" column="sortOrder"/>
+        <result property="createTime" column="createTime"/>
+        <result property="updateTime" column="updateTime"/>
+        <result property="isDelete" column="isDelete"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, tagName, sortOrder, createTime, updateTime, isDelete
+    </sql>
+
+    <!-- 查询未删除的标签列表（按排序升序） -->
+    <select id="listValidTags" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM picture_tag
+        WHERE isDelete = 0
+        ORDER BY sortOrder ASC
+    </select>
+
+    <!-- 根据 tagName 精确查询（用于唯一校验） -->
+    <select id="selectByTagName" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM picture_tag
+        WHERE tagName = #{tagName} AND isDelete = 0
+    </select>
+
+    <!-- 新增标签 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO picture_tag (tagName, sortOrder, createTime, updateTime, isDelete)
+        VALUES (#{tagName}, #{sortOrder}, NOW(), NOW(), 0)
+    </insert>
+
+    <!-- 根据 ID 更新（含逻辑删除） -->
+    <update id="updateById">
+        UPDATE picture_tag
+        <set>
+            <if test="tagName != null and tagName != ''">tagName = #{tagName},</if>
+            <if test="sortOrder != null">sortOrder = #{sortOrder},</if>
+            <if test="isDelete != null">isDelete = #{isDelete},</if>
+            updateTime = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据 ID 查询（含已删除） -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM picture_tag
+        WHERE id = #{id}
+    </select>
+
+</mapper>

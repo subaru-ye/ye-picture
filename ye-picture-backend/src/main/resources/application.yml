@@ -25,6 +25,34 @@ spring:
     host: 127.0.0.1
     port: 6379
     timeout: 5000
+  # rabbitMQ配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    # 可选：开启发布确认（生产环境建议开）
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual  # 手动 ACK（消费者用）
+        retry:
+          enabled: true
+          max-attempts: 3
+  # 邮箱配置
+  mail:
+    host: smtp.qq.com
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true              # 使用 STARTTLS 加密（对应 port=587）
   servlet:
     multipart:
       max-file-size: 10MB

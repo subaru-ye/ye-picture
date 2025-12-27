@@ -1,6 +1,7 @@
-package com.ye.yepicturebackend.model.vo;
+package com.ye.yepicturebackend.model.vo.space;
 
 import com.ye.yepicturebackend.model.entity.Space;
+import com.ye.yepicturebackend.model.vo.user.UserVO;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 

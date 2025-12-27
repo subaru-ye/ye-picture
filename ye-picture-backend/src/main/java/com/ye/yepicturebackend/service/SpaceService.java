@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ye.yepicturebackend.common.DeleteRequest;
-import com.ye.yepicturebackend.model.vo.SpaceVO;
+import com.ye.yepicturebackend.model.vo.space.SpaceVO;
 import com.ye.yepicturebackend.model.dto.space.SpaceAddRequest;
 import com.ye.yepicturebackend.model.dto.space.SpaceEditRequest;
 import com.ye.yepicturebackend.model.dto.space.SpaceQueryRequest;

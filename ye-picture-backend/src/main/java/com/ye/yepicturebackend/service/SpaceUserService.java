@@ -5,7 +5,7 @@ import com.ye.yepicturebackend.model.dto.spaceuser.SpaceUserAddRequest;
 import com.ye.yepicturebackend.model.dto.spaceuser.SpaceUserQueryRequest;
 import com.ye.yepicturebackend.model.entity.SpaceUser;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.ye.yepicturebackend.model.vo.SpaceUserVO;
+import com.ye.yepicturebackend.model.vo.space.SpaceUserVO;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;

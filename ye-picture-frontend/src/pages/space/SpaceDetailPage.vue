@@ -48,7 +48,10 @@
 
     <!-- 按颜色搜索 -->
     <a-form-item label="按颜色搜索" style="margin-top: 16px">
-      <color-picker format="hex" @pureColorChange="onColorChange" />
+      <a-space size="middle">
+        <color-picker format="hex" @pureColorChange="onColorChange" />
+        <a-button @click="clearColorFilter">清除颜色</a-button>
+      </a-space>
     </a-form-item>
 
     <!-- 图片列表 -->
@@ -225,6 +228,11 @@ const onColorChange = async (color: string) => {
   } catch (error: any) {
     message.error('颜色搜索失败：' + (error.message || '未知错误'))
   }
+}
+// 清除颜色筛选，恢复普通分页数据
+const clearColorFilter = () => {
+  // 重置回普通搜索模式（使用当前 searchParams）
+  fetchData()
 }
 // 分享弹窗引用
 const batchEditPictureModalRef = ref()

@@ -9,8 +9,8 @@ import com.ye.yepicturebackend.common.ResultUtils;
 import com.ye.yepicturebackend.constant.UserConstant;
 import com.ye.yepicturebackend.exception.ErrorCode;
 import com.ye.yepicturebackend.exception.ThrowUtils;
-import com.ye.yepicturebackend.model.vo.LoginUserVO;
-import com.ye.yepicturebackend.model.vo.UserVO;
+import com.ye.yepicturebackend.model.vo.user.LoginUserVO;
+import com.ye.yepicturebackend.model.vo.user.UserVO;
 import com.ye.yepicturebackend.model.dto.user.*;
 import com.ye.yepicturebackend.model.entity.User;
 import com.ye.yepicturebackend.service.UserService;
@@ -47,9 +47,9 @@ public class UserController {
     @PostMapping("/register")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
-        // 2. 调用组合服务，完成“注册+创建空间”
+        // 1. 调用组合服务，完成“注册+创建空间”
         long userId = userService.registerAndCreateSpace(userRegisterRequest);
-        // 3. 返回结果
+        // 2. 返回结果
         return ResultUtils.success(userId);
     }
 
