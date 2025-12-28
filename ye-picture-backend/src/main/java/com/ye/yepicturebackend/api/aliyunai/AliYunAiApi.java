@@ -25,25 +25,24 @@ public class AliYunAiApi {
     @Value("${aliYunAi.apiKey}")
     private String apiKey;
 
-    // 用于发起图像扩展任务的创建请求，请求方式为POST
+    // 图像扩展任务的创建请求，请求方式为POST
     public static final String CREATE_OUT_PAINTING_TASK_URL =
             "https://dashscope.aliyuncs.com/api/v1/services/aigc/image2image/out-painting";
 
-    // 占位符%s需替换为具体任务ID（taskId），请求方式为GET
+    // %s为具体任务ID，请求方式为GET
     public static final String GET_OUT_PAINTING_TASK_URL =
             "https://dashscope.aliyuncs.com/api/v1/tasks/%s";
 
     /**
-     * 调用阿里云AI接口，创建图像扩展任务
+     * 创建图像扩展任务
      *
      * @param createOutPaintingTaskRequest 图像扩展任务请求参数封装对象
-     *                                     包含模型指定（默认image-out-painting）、输入图像URL、扩展参数（如扩展比例、像素填充等）
+     *                                     包含模型指定（默认image-out-painting）、输入图像URL、扩展参数
      * @return CreateOutPaintingTaskResponse 任务创建响应对象
-     * 成功时包含taskId（任务唯一标识）和初始taskStatus（通常为PENDING/RUNNING）；失败时包含错误码和错误信息
+     * 成功时包含taskId和初始taskStatus；失败时包含错误码和错误信息
      */
     public CreateOutPaintingTaskResponse createOutPaintingTask(CreateOutPaintingTaskRequest createOutPaintingTaskRequest) {
         log.info("进入阿里云AI扩图方法，接收的请求参数：{}", JSONUtil.toJsonStr(createOutPaintingTaskRequest));
-
 
         // 1. 请求参数合法性校验
         ThrowUtils.throwIf(createOutPaintingTaskRequest == null,
@@ -55,10 +54,10 @@ public class AliYunAiApi {
 
         // 2. 构建POST请求
         HttpRequest httpRequest = HttpRequest.post(CREATE_OUT_PAINTING_TASK_URL)
-                .header(Header.AUTHORIZATION, "Bearer " + apiKey)
-                .header("X-DashScope-Async", "enable")
-                .header(Header.CONTENT_TYPE, ContentType.JSON.getValue())
-                .body(JSONUtil.toJsonStr(createOutPaintingTaskRequest));
+                .header(Header.AUTHORIZATION, "Bearer " + apiKey)   //  - Header: Authorization (Bearer + apiKey)
+                .header("X-DashScope-Async", "enable")       //  - Header: X-DashScope-Async (enable) -> 表示异步执行
+                .header(Header.CONTENT_TYPE, ContentType.JSON.getValue()) //  - Header: Content-Type (application/json)
+                .body(JSONUtil.toJsonStr(createOutPaintingTaskRequest));  //  - Body: JSON 格式的请求参数
 
         // 3. 执行HTTP请求
         try (HttpResponse httpResponse = httpRequest.execute()) {
@@ -87,16 +86,16 @@ public class AliYunAiApi {
 
             // 7. 任务创建成功，返回响应对象
             return response;
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("调用阿里云AI扩图接口时发生异常，请求参数：{}", requestBody, e);
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "AI 扩图接口调用失败，异常原因：" + e.getMessage());
         }
     }
 
     /**
-     * 调用阿里云AI接口，查询图像扩展任务的状态及结果
+     * 查询图像扩展任务的状态及结果
      *
-     * @param taskId 图像扩展任务的唯一标识（从createOutPaintingTask方法的返回结果中获取）
+     * @param taskId 图像扩展任务的唯一标识
      * @return GetOutPaintingTaskResponse 任务查询响应对象
      * 包含任务全生命周期信息：taskStatus（当前状态）、submitTime/scheduledTime/endTime（时间节点）、
      * outputImageUrl（任务成功时返回扩展后图像URL）、taskMetrics（任务统计指标）；失败时包含错误码和错误信息

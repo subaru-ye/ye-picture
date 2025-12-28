@@ -22,7 +22,7 @@ import com.ye.yepicturebackend.constant.UserConstant;
 import com.ye.yepicturebackend.model.dto.picture.delete.DeletePictureResult;
 import com.ye.yepicturebackend.model.dto.picture.edit.EditBatchRequest;
 import com.ye.yepicturebackend.model.dto.picture.query.QueryPictureRequest;
-import com.ye.yepicturebackend.model.dto.picture.task.AiExtendRequest;
+import com.ye.yepicturebackend.api.aliyunai.model.AiExtendRequest;
 import com.ye.yepicturebackend.model.dto.picture.upload.UploadRequest;
 import com.ye.yepicturebackend.utils.PictureVoConverter;
 import com.ye.yepicturebackend.exception.BusinessException;

@@ -26,7 +26,7 @@ import com.ye.yepicturebackend.model.dto.picture.edit.EditBatchRequest;
 import com.ye.yepicturebackend.model.dto.picture.query.QueryPictureRequest;
 import com.ye.yepicturebackend.model.dto.picture.query.SearchColorRequest;
 import com.ye.yepicturebackend.model.dto.picture.query.SearchPictureRequest;
-import com.ye.yepicturebackend.model.dto.picture.task.AiExtendRequest;
+import com.ye.yepicturebackend.api.aliyunai.model.AiExtendRequest;
 import com.ye.yepicturebackend.model.dto.picture.upload.UploadRequest;
 import com.ye.yepicturebackend.model.vo.picture.PictureTagCategory;
 import com.ye.yepicturebackend.model.vo.picture.PictureVO;

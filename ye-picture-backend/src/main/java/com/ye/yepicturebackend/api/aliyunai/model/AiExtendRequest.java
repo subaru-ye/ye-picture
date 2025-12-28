@@ -1,6 +1,5 @@
-package com.ye.yepicturebackend.model.dto.picture.task;
+package com.ye.yepicturebackend.api.aliyunai.model;
 
-import com.ye.yepicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
 import lombok.Data;
 
 import java.io.Serializable;

@@ -42,7 +42,7 @@ public class GetImagePageUrlApi {
             // 2. 发送 POST 请求到百度接口
             HttpResponse response = HttpRequest.post(url)
                     .form(formData)
-                    .header("acs-token", RandomUtil.randomString(1))
+                    .header("acs-token", RandomUtil.randomString(2))
                     .timeout(5000)
                     .execute();
             // 判断响应状态
@@ -52,7 +52,6 @@ public class GetImagePageUrlApi {
             // 解析响应
             String responseBody = response.body();
             log.info("百度接口完整响应体：{}", responseBody);
-//            Map<String, Object> result = JSONUtil.toBean(responseBody, Map.class);
             Map<?, ?> rawMap = JSONUtil.toBean(responseBody, Map.class);
             Map<String, Object> result = typeConversionMap(rawMap, String.class, Object.class);
 
@@ -61,7 +60,6 @@ public class GetImagePageUrlApi {
                 throw new BusinessException(ErrorCode.OPERATION_ERROR, "接口调用失败");
             }
             // 提取结果数据中的原始URL
-//            Map<String, Object> data = (Map<String, Object>) result.get("data");
             Object dataObj = result.get("data");
             Map<String, Object> data = typeConversionMap(dataObj, String.class, Object.class);
 
@@ -103,9 +101,9 @@ public class GetImagePageUrlApi {
 
     // 测试方法
     public static void main(String[] args) {
-        String imageUrl = "https://tonight-picture-1352619299.cos." +
-                "ap-nanjing.myqcloud.com/public/1971555205276835842/" +
-                "origin/2025-09-26_SFreRh8U.jpg";
+        String imageUrl = "https://ts1.tc.mm.bing.net/th/id/R-C.c1bf9b1414e92190f2ff58dcbcc63fe5?" +
+                "rik=SMCsXze34Dqcyw&riu=http%3a%2f%2fseopic.699pic.com%2fphoto%2f50085%2f2259" +
+                ".jpg_wh1200.jpg&ehk=OIinHBFGcM0%2bxJ0W4ho8psSYzT30Fz1CU1RMOw1%2fJgA%3d&risl=&pid=ImgRaw&r=0";
         String result = getImagePageUrl(imageUrl);
         System.out.println("搜索成功，结果 URL：" + result);
     }

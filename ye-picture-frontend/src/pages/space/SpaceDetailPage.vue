@@ -157,7 +157,7 @@ onMounted(() => {
   fetchData()
 })
 // 搜索条件
-const searchParams = ref<API.PictureQueryRequest>({
+const searchParams = ref<API.QueryPictureRequest>({
   current: 1,
   pageSize: 12,
   sortField: 'createTime',
@@ -172,7 +172,7 @@ const onPageChange = (page, pageSize) => {
 }
 
 // 搜索
-const onSearch = (newSearchParams: API.PictureQueryRequest) => {
+const onSearch = (newSearchParams: API.QueryPictureRequest) => {
   searchParams.value = {
     ...searchParams.value,
     ...newSearchParams,

@@ -30,7 +30,7 @@ public class CreateOutPaintingTaskRequest implements Serializable {
     @Data
     public static class Input {
         /**
-         * 必选，图像 URL
+         * 图像 URL
          */
         @Alias("image_url")
         private String imageUrl;

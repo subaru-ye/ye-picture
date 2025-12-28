@@ -101,7 +101,7 @@ import { getUnreadCountUsingGet, listNoticesUsingGet, markAsReadUsingPost } from
 
 // 响应式数据
 const loading = ref<boolean>(false)
-const noticeList = ref<API.ReviewNoticeVO[]>([]) 
+const noticeList = ref<API.ReviewNoticeVO[]>([])
 const total = ref<number>(0)
 const unreadCount = ref<number>(0)
 

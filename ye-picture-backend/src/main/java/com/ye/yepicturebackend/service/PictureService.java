@@ -7,7 +7,7 @@ import com.ye.yepicturebackend.common.DeleteRequest;
 import com.ye.yepicturebackend.model.dto.picture.delete.DeletePictureResult;
 import com.ye.yepicturebackend.model.dto.picture.edit.EditBatchRequest;
 import com.ye.yepicturebackend.model.dto.picture.query.QueryPictureRequest;
-import com.ye.yepicturebackend.model.dto.picture.task.AiExtendRequest;
+import com.ye.yepicturebackend.api.aliyunai.model.AiExtendRequest;
 import com.ye.yepicturebackend.model.dto.picture.upload.UploadRequest;
 import com.ye.yepicturebackend.model.vo.picture.PictureVO;
 import com.ye.yepicturebackend.model.dto.picture.edit.UpdatePictureRequest;
