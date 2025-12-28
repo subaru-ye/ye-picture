@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.admin;
+package com.ye.yepicturebackend.model.dto.picture.review;
 
 import lombok.Data;
 
@@ -8,7 +8,7 @@ import java.io.Serializable;
  * 图片审核请求
  */
 @Data
-public class PictureReviewRequest implements Serializable {
+public class ReviewPictureRequest implements Serializable {
 
     /**
      * id

@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.manager;
+package com.ye.yepicturebackend.manager.upload;
 
 import cn.hutool.core.io.FileUtil;
 import com.qcloud.cos.COSClient;
@@ -6,7 +6,6 @@ import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
-import com.ye.yepicturebackend.config.CosClientConfig;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;

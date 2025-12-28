@@ -6,17 +6,13 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import com.qcloud.cos.exception.CosClientException;
-import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
 import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
-import com.ye.yepicturebackend.config.CosClientConfig;
 import com.ye.yepicturebackend.exception.BusinessException;
 import com.ye.yepicturebackend.exception.ErrorCode;
-import com.ye.yepicturebackend.manager.CosManager;
-import com.ye.yepicturebackend.model.dto.file.UploadPictureResult;
+import com.ye.yepicturebackend.model.dto.picture.upload.UploadResult;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Resource;
@@ -44,7 +40,7 @@ public abstract class PictureUploadTemplate {
      * @param uploadPathPrefix 图片在COS中的存储路径前缀（如"user/123"）
      * @return UploadPictureResult 图片上传结果封装对象（含原图+压缩图+缩略图完整信息）
      */
-    public UploadPictureResult uploadPicture(Object inputSource, String uploadPathPrefix) {
+    public UploadResult uploadPicture(Object inputSource, String uploadPathPrefix) {
         // 1. 校验图片合法性
         validPicture(inputSource);
         // 2. 构建上传文件名和图片存储路径
@@ -69,7 +65,7 @@ public abstract class PictureUploadTemplate {
             ProcessResults processResults = putObjectResult.getCiUploadResult().getProcessResults();
             List<CIObject> ciObjectList = processResults.getObjectList();
             // 6. 构建完整结果（原图信息 + 压缩图/缩略图信息）
-            UploadPictureResult result = new UploadPictureResult();
+            UploadResult result = new UploadResult();
             // 原图片
             fillOriginPictureInfo(result, originImageInfo, originFilename, tempFile, originUploadPath);
             // 压缩图和缩略图
@@ -109,7 +105,7 @@ public abstract class PictureUploadTemplate {
      * @param originUploadPath 原图片在COS的存储路径（用于构建访问URL）
      */
     private void fillOriginPictureInfo(
-            UploadPictureResult result, ImageInfo originImageInfo,
+            UploadResult result, ImageInfo originImageInfo,
             String originFilename, File tempFile, String originUploadPath) {
         // 图片宽高
         int originWidth = originImageInfo.getWidth();
@@ -140,7 +136,7 @@ public abstract class PictureUploadTemplate {
      * @param result       上传结果对象（待填充）
      * @param ciObjectList COS返回的CI处理对象列表（含压缩图、缩略图）
      */
-    private void fillCompressAndThumbnailInfo(UploadPictureResult result, List<CIObject> ciObjectList) {
+    private void fillCompressAndThumbnailInfo(UploadResult result, List<CIObject> ciObjectList) {
         if (CollUtil.isEmpty(ciObjectList)) {
             log.warn("COS未返回压缩图/缩略图信息，仅返回原图片");
             return;

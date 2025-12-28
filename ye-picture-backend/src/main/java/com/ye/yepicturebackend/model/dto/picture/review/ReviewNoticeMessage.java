@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.admin;
+package com.ye.yepicturebackend.model.dto.picture.review;
 
 import lombok.Data;
 

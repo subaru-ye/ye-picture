@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.file;
+package com.ye.yepicturebackend.model.dto.picture.upload;
 
 import lombok.Data;
 
@@ -6,7 +6,7 @@ import lombok.Data;
  * 上传图片的结果
  */
 @Data
-public class UploadPictureResult {
+public class UploadResult {
 
     /**
      * 原图 COS 相对路径（Key）

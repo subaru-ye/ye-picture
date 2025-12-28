@@ -25,34 +25,46 @@ CREATE TABLE IF NOT EXISTS user
 CREATE TABLE IF NOT EXISTS picture
 (
     -- 基础主键与核心信息
-    id            bigint AUTO_INCREMENT COMMENT 'id' PRIMARY KEY,
-    url           varchar(512)                       NOT NULL COMMENT '原图片 url',
-    compressUrl   varchar(512)                       NULL COMMENT '压缩图 url',
-    thumbnailUrl  varchar(512)                       NULL COMMENT '缩略图 url',
-    name          varchar(128)                       NOT NULL COMMENT '图片名称',
-    introduction  varchar(512)                       NULL COMMENT '简介',
-    category      varchar(64)                        NULL COMMENT '分类',
-    tags          varchar(512)                       NULL COMMENT '标签（JSON 数组）',
-    -- 图片属性字段
-    picSize       bigint                             NULL COMMENT '图片体积',
-    picWidth      int                                NULL COMMENT '图片宽度',
-    picHeight     int                                NULL COMMENT '图片高度',
-    picScale      double                             NULL COMMENT '图片宽高比例',
-    picFormat     varchar(32)                        NULL COMMENT '图片格式',
-    picColor      varchar(16)                        NULL COMMENT '图片主色调',
-    -- 关联与审核字段
-    userId        bigint                             NOT NULL COMMENT '创建用户 id',
-    spaceId       bigint                             NULL COMMENT '空间 id（为空表示公共空间）',
-    reviewStatus  INT                                NOT NULL DEFAULT 0 COMMENT '审核状态：0-待审核; 1-通过; 2-拒绝',
-    reviewMessage VARCHAR(512)                       NULL COMMENT '审核信息',
-    reviewerId    BIGINT                             NULL COMMENT '审核人 ID',
-    reviewTime    DATETIME                           NULL COMMENT '审核时间',
-    -- 通用时间与逻辑删除字段
-    createTime    datetime DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
-    editTime      datetime DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '编辑时间',
-    updateTime    datetime DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    isDelete      tinyint  DEFAULT 0                 NOT NULL COMMENT '是否删除',
+    id            BIGINT AUTO_INCREMENT COMMENT 'id' PRIMARY KEY,
 
+    -- COS 存储路径（替代直接存储 URL）
+    originKey     VARCHAR(255) NULL COMMENT '原图COS相对路径',
+    compressKey   VARCHAR(255) NULL COMMENT '压缩图COS相对路径',
+    thumbnailKey  VARCHAR(255) NULL COMMENT '缩略图COS相对路径',
+
+    -- 图片访问 URL（由服务层动态生成，可为空）
+    url           VARCHAR(512) NULL DEFAULT NULL COMMENT '原图片临时访问 url',
+    compressUrl   VARCHAR(512) NULL DEFAULT NULL COMMENT '压缩图临时访问 url',
+    thumbnailUrl  VARCHAR(512) NULL DEFAULT NULL COMMENT '缩略图临时访问 url',
+
+    name          VARCHAR(128) NOT NULL COMMENT '图片名称',
+    introduction  VARCHAR(512) NULL COMMENT '简介',
+    category      VARCHAR(64)  NULL COMMENT '分类',
+    tags          VARCHAR(512) NULL COMMENT '标签（JSON 数组）',
+
+    -- 图片属性字段
+    picSize       BIGINT       NULL COMMENT '图片体积',
+    picWidth      INT          NULL COMMENT '图片宽度',
+    picHeight     INT          NULL COMMENT '图片高度',
+    picScale      DOUBLE       NULL COMMENT '图片宽高比例',
+    picFormat     VARCHAR(32)  NULL COMMENT '图片格式',
+    picColor      VARCHAR(16)  NULL COMMENT '图片主色调',
+
+    -- 关联与审核字段
+    userId        BIGINT       NOT NULL COMMENT '创建用户 id',
+    spaceId       BIGINT       NULL COMMENT '空间 id（为空表示公共空间）',
+    reviewStatus  INT          NOT NULL DEFAULT 0 COMMENT '审核状态：0-待审核; 1-通过; 2-拒绝',
+    reviewMessage VARCHAR(512) NULL COMMENT '审核信息',
+    reviewerId    BIGINT       NULL COMMENT '审核人 ID',
+    reviewTime    DATETIME     NULL COMMENT '审核时间',
+
+    -- 通用时间与逻辑删除字段
+    createTime    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    editTime      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '编辑时间',
+    updateTime    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    isDelete      TINYINT      NOT NULL DEFAULT 0 COMMENT '是否删除',
+
+    -- 索引
     INDEX idx_name (name),
     INDEX idx_introduction (introduction),
     INDEX idx_category (category),
@@ -131,33 +143,21 @@ CREATE TABLE IF NOT EXISTS picture_category
 -- 系统通知表（存储审核结果通知、消息状态等）
 CREATE TABLE IF NOT EXISTS sys_notice
 (
-    id             bigint AUTO_INCREMENT COMMENT '通知ID' PRIMARY KEY,
-    userId         bigint                             NOT NULL COMMENT '接收通知的用户ID（图片上传者）',
-    pictureId      bigint                             NOT NULL COMMENT '关联图片ID',
-    noticeType     tinyint                            NOT NULL COMMENT '通知类型：1-图片审核结果',
-    noticeContent  varchar(500)                       NOT NULL COMMENT '通知内容（如审核通过/驳回理由）',
-    noticeStatus   tinyint      DEFAULT 0             NOT NULL COMMENT '发送状态：0-待发送；1-已发送；2-发送失败',
-    readStatus     tinyint      DEFAULT 0             NOT NULL COMMENT '阅读状态：0-未读；1-已读',
-    sendTime       datetime                           NULL COMMENT '通知发送时间',
-    createTime     datetime     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
-    updateTime     datetime     DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    isDelete       tinyint      DEFAULT 0             NOT NULL COMMENT '是否删除',
+    id            bigint AUTO_INCREMENT COMMENT '通知ID' PRIMARY KEY,
+    userId        bigint                             NOT NULL COMMENT '接收通知的用户ID（图片上传者）',
+    pictureId     bigint                             NOT NULL COMMENT '关联图片ID',
+    noticeType    tinyint                            NOT NULL COMMENT '通知类型：1-图片审核结果',
+    noticeContent varchar(500)                       NOT NULL COMMENT '通知内容（如审核通过/驳回理由）',
+    noticeStatus  tinyint  DEFAULT 0                 NOT NULL COMMENT '发送状态：0-待发送；1-已发送；2-发送失败',
+    readStatus    tinyint  DEFAULT 0                 NOT NULL COMMENT '阅读状态：0-未读；1-已读',
+    reviewStatus  TINYINT                            NULL DEFAULT NULL COMMENT '审核状态：0-待审,1-通过,2-拒绝',
+    sendTime      datetime                           NULL COMMENT '通知发送时间',
+    createTime    datetime DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+    updateTime    datetime DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    isDelete      tinyint  DEFAULT 0                 NOT NULL COMMENT '是否删除',
 
     INDEX idx_userId (userId),
     INDEX idx_pictureId (pictureId),
     INDEX idx_noticeStatus (noticeStatus),
     INDEX idx_readStatus (readStatus)
 ) COMMENT '系统通知表' COLLATE = utf8mb4_unicode_ci;
-
-ALTER TABLE sys_notice
-    ADD COLUMN reviewStatus TINYINT NULL DEFAULT NULL COMMENT '审核状态：0-待审,1-通过,2-拒绝';
-
-ALTER TABLE picture
-    ADD COLUMN originKey VARCHAR(255) NULL COMMENT '原图COS相对路径',
-    ADD COLUMN compressKey VARCHAR(255) NULL COMMENT '压缩图COS相对路径',
-    ADD COLUMN thumbnailKey VARCHAR(255) NULL COMMENT '缩略图COS相对路径';
-
-ALTER TABLE picture
-    MODIFY COLUMN url VARCHAR(512) NULL DEFAULT NULL,
-    MODIFY COLUMN compressUrl VARCHAR(512) NULL DEFAULT NULL,
-    MODIFY COLUMN thumbnailUrl VARCHAR(512) NULL DEFAULT NULL;

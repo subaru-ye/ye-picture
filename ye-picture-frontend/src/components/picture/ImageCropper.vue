@@ -113,7 +113,7 @@ const handleConfirm = () => {
 const handleUpload = async ({ file }: { file: File }) => {
   loading.value = true
   try {
-    const params: API.PictureUploadRequest = props.picture ? { id: props.picture.id } : {}
+    const params: API.UploadRequest = props.picture ? { id: props.picture.id } : {}
     params.spaceId = props.spaceId
     const res = await uploadPictureUsingPost(params, {}, file)
     if (res.data.code === 0 && res.data.data) {
@@ -301,9 +301,6 @@ const editAction = (action: string) => {
 <style scoped>
 .image-cropper {
   text-align: center;
-}
-
-.image-cropper .vue-cropper {
   height: 400px;
 }
 </style>

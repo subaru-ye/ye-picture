@@ -11,12 +11,6 @@
       <a-col :sm="24" :md="8" :xl="6">
         <a-card title="图片信息">
           <a-descriptions :column="1">
-            <!-- <a-descriptions-item label="作者">
-              <a-space>
-                <a-avatar :size="24" :src="picture.user?.userAvatar" />
-                <div>{{ picture.user?.userName }}</div>
-              </a-space>
-            </a-descriptions-item> -->
             <a-descriptions-item label="名称">
               {{ picture.name ?? '未命名' }}
             </a-descriptions-item>
@@ -183,10 +177,10 @@ const doDownload = async () => {
     message.warning('图片地址不存在')
     return
   }
-  
+
   try {
     // 使用图片名称作为文件名，如果没有则使用默认名称
-    const fileName = picture.value.name 
+    const fileName = picture.value.name
       ? `${picture.value.name}${picture.value.picFormat ? '.' + picture.value.picFormat : ''}`
       : undefined
     await downloadImage(picture.value.url, fileName)

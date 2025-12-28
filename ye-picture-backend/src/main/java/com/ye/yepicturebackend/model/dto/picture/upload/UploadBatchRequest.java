@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.admin;
+package com.ye.yepicturebackend.model.dto.picture.upload;
 
 import lombok.Data;
 
@@ -9,7 +9,7 @@ import java.util.List;
  * 批量导入图片请求
  */
 @Data
-public class BatchUploadRequest implements Serializable {
+public class UploadBatchRequest implements Serializable {
 
     /**
      * 搜索词  

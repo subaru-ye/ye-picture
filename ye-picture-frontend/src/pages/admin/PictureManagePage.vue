@@ -279,7 +279,7 @@ const dataList = ref<API.Picture[]>([])
 const total = ref(0)
 
 /** 搜索条件参数 */
-const searchParams = reactive<API.PictureQueryRequest>({
+const searchParams = reactive<API.QueryPictureRequest>({
   current: 1,
   pageSize: 10,
   sortField: 'createTime',

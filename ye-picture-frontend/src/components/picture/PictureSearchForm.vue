@@ -63,12 +63,12 @@ interface Props {
   /**
    * 搜索触发回调函数
    */
-  onSearch?: (searchParams: API.PictureQueryRequest) => void
+  onSearch?: (searchParams: API.QueryPictureRequest) => void
 }
 const props = defineProps<Props>()
 
 // ==================== 响应式数据 ====================
-const searchParams = reactive<API.PictureQueryRequest>({})
+const searchParams = reactive<API.QueryPictureRequest>({})
 const categoryOptions = ref<Array<{ value: string; label: string }>>([])
 const tagOptions = ref<Array<{ value: string; label: string }>>([])
 
@@ -86,7 +86,7 @@ const triggerSearch = () => {
  */
 const doClear = () => {
   Object.keys(searchParams).forEach((key) => {
-    searchParams[key as keyof API.PictureQueryRequest] = undefined
+    searchParams[key as keyof API.QueryPictureRequest] = undefined
   })
   triggerSearch()
 }
@@ -120,7 +120,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.picture-search-form .ant-form-item {
+.picture-search-form {
   margin-top: 16px;
 }
 </style>

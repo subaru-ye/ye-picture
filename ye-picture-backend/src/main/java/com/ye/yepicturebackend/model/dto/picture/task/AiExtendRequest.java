@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.shared;
+package com.ye.yepicturebackend.model.dto.picture.task;
 
 import com.ye.yepicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
 import lombok.Data;

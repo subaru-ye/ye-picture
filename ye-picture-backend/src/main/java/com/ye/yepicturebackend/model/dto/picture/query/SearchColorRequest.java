@@ -1,11 +1,11 @@
-package com.ye.yepicturebackend.model.dto.picture.shared;
+package com.ye.yepicturebackend.model.dto.picture.query;
 
 import lombok.Data;
 
 import java.io.Serializable;
 
 @Data
-public class SearchPictureByColorRequest implements Serializable {
+public class SearchColorRequest implements Serializable {
 
     /**
      * 图片主色调

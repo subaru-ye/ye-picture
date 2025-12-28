@@ -1,4 +1,9 @@
 declare namespace API {
+  type AiExtendRequest = {
+    parameters?: Parameters
+    pictureId?: number
+  }
+
   type BaseResponseBoolean_ = {
     code?: number
     data?: boolean
@@ -192,13 +197,24 @@ declare namespace API {
     requestId?: string
   }
 
-  type CreatePictureOutPaintingTaskRequest = {
-    parameters?: Parameters
-    pictureId?: number
-  }
-
   type DeleteRequest = {
     id?: number
+  }
+
+  type EditBatchRequest = {
+    category?: string
+    nameRule?: string
+    pictureIdList?: number[]
+    spaceId?: number
+    tags?: string[]
+  }
+
+  type EditPictureRequest = {
+    category?: string
+    id?: number
+    introduction?: string
+    name?: string
+    tags?: string[]
   }
 
   type GetOutPaintingTaskResponse = {
@@ -376,84 +392,9 @@ declare namespace API {
     userId?: number
   }
 
-  type PictureEditByBatchRequest = {
-    category?: string
-    nameRule?: string
-    pictureIdList?: number[]
-    spaceId?: number
-    tags?: string[]
-  }
-
-  type PictureEditRequest = {
-    category?: string
-    id?: number
-    introduction?: string
-    name?: string
-    tags?: string[]
-  }
-
-  type PictureQueryRequest = {
-    category?: string
-    current?: number
-    endEditTime?: string
-    id?: number
-    introduction?: string
-    name?: string
-    nullSpaceId?: boolean
-    pageSize?: number
-    picFormat?: string
-    picHeight?: number
-    picScale?: number
-    picSize?: number
-    picWidth?: number
-    reviewMessage?: string
-    reviewStatus?: number
-    reviewTime?: string
-    reviewerId?: number
-    searchText?: string
-    sortField?: string
-    sortOrder?: string
-    spaceId?: number
-    startEditTime?: string
-    tags?: string[]
-    userId?: number
-  }
-
-  type PictureReviewRequest = {
-    id?: number
-    reviewMessage?: string
-    reviewStatus?: number
-  }
-
   type PictureTagCategory = {
     categoryList?: string[]
     tagList?: string[]
-  }
-
-  type PictureUpdateRequest = {
-    category?: string
-    id?: number
-    introduction?: string
-    name?: string
-    tags?: string[]
-  }
-
-  type PictureUploadByBatchRequest = {
-    category?: string
-    count?: number
-    namePrefix?: string
-    searchText?: string
-    tags?: string[]
-  }
-
-  type PictureUploadRequest = {
-    category?: string
-    fileUrl?: string
-    id?: number
-    introduction?: string
-    picName?: string
-    spaceId?: number
-    tags?: string[]
   }
 
   type PictureVO = {
@@ -480,6 +421,33 @@ declare namespace API {
     userId?: number
   }
 
+  type QueryPictureRequest = {
+    category?: string
+    current?: number
+    endEditTime?: string
+    id?: number
+    introduction?: string
+    name?: string
+    nullSpaceId?: boolean
+    pageSize?: number
+    picFormat?: string
+    picHeight?: number
+    picScale?: number
+    picSize?: number
+    picWidth?: number
+    reviewMessage?: string
+    reviewStatus?: number
+    reviewTime?: string
+    reviewerId?: number
+    searchText?: string
+    sortField?: string
+    sortOrder?: string
+    spaceId?: number
+    startEditTime?: string
+    tags?: string[]
+    userId?: number
+  }
+
   type ReviewNoticeVO = {
     createTime?: string
     id?: number
@@ -487,17 +455,24 @@ declare namespace API {
     noticeType?: string
     pictureId?: number
     pictureTitle?: string
+    pictureUrl?: string
     reviewMessage?: string
     reviewStatus?: number
     userId?: number
   }
 
-  type SearchPictureByColorRequest = {
+  type ReviewPictureRequest = {
+    id?: number
+    reviewMessage?: string
+    reviewStatus?: number
+  }
+
+  type SearchColorRequest = {
     picColor?: string
     spaceId?: number
   }
 
-  type SearchPictureByPictureRequest = {
+  type SearchPictureRequest = {
     pictureId?: number
   }
 
@@ -682,7 +657,33 @@ declare namespace API {
     total?: number
   }
 
+  type UpdatePictureRequest = {
+    category?: string
+    id?: number
+    introduction?: string
+    name?: string
+    tags?: string[]
+  }
+
+  type UploadBatchRequest = {
+    category?: string
+    count?: number
+    namePrefix?: string
+    searchText?: string
+    tags?: string[]
+  }
+
   type uploadPictureUsingPOSTParams = {
+    category?: string
+    fileUrl?: string
+    id?: number
+    introduction?: string
+    picName?: string
+    spaceId?: number
+    tags?: string[]
+  }
+
+  type UploadRequest = {
     category?: string
     fileUrl?: string
     id?: number

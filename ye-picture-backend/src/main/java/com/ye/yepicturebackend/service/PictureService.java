@@ -4,12 +4,16 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ye.yepicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.ye.yepicturebackend.common.DeleteRequest;
+import com.ye.yepicturebackend.model.dto.picture.delete.DeletePictureResult;
+import com.ye.yepicturebackend.model.dto.picture.edit.EditBatchRequest;
+import com.ye.yepicturebackend.model.dto.picture.query.QueryPictureRequest;
+import com.ye.yepicturebackend.model.dto.picture.task.AiExtendRequest;
+import com.ye.yepicturebackend.model.dto.picture.upload.UploadRequest;
 import com.ye.yepicturebackend.model.vo.picture.PictureVO;
-import com.ye.yepicturebackend.model.dto.picture.admin.PictureUpdateRequest;
-import com.ye.yepicturebackend.model.dto.picture.shared.*;
-import com.ye.yepicturebackend.model.dto.picture.admin.PictureReviewRequest;
-import com.ye.yepicturebackend.model.dto.picture.admin.BatchUploadRequest;
-import com.ye.yepicturebackend.model.dto.picture.user.PictureEditRequest;
+import com.ye.yepicturebackend.model.dto.picture.edit.UpdatePictureRequest;
+import com.ye.yepicturebackend.model.dto.picture.review.ReviewPictureRequest;
+import com.ye.yepicturebackend.model.dto.picture.upload.UploadBatchRequest;
+import com.ye.yepicturebackend.model.dto.picture.edit.EditPictureRequest;
 import com.ye.yepicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ye.yepicturebackend.model.entity.User;
@@ -30,12 +34,12 @@ public interface PictureService extends IService<Picture> {
      * 上传或更新图片
      *
      * @param inputSource          图片输入源：支持两种类型，1. 本地文件相关对象，2. 图片URL字符串
-     * @param pictureUploadRequest 图片上传/更新请求参数
+     * @param uploadRequest 图片上传/更新请求参数
      * @param loginUser            当前登录用户对象
      * @return PictureVO 脱敏后的图片视图对象
      */
     PictureVO uploadPicture(Object inputSource,
-                            PictureUploadRequest pictureUploadRequest,
+                            UploadRequest uploadRequest,
                             User loginUser);
     // endregion
 
@@ -90,7 +94,7 @@ public interface PictureService extends IService<Picture> {
     /**
      * 图片更新 (管理员)
      *
-     * @param pictureUpdateRequest 图片更新请求体，包含待更新的图片ID及相关字段（如名称、标签等）
+     * @param updatePictureRequest 图片更新请求体，包含待更新的图片ID及相关字段（如名称、标签等）
      * @param loginUser            当前登录用户信息，用于权限校验和审核参数填充
      * @return Map<String, Object> 更新结果映射：
      * - success: Boolean 表示更新是否成功
@@ -98,30 +102,30 @@ public interface PictureService extends IService<Picture> {
      * - updateTime: LocalDateTime 实际更新时间
      * - message: String 操作提示信息（如"更新成功"）
      */
-    Map<String, Object> updatePicture(PictureUpdateRequest pictureUpdateRequest, User loginUser);
+    Map<String, Object> updatePicture(UpdatePictureRequest updatePictureRequest, User loginUser);
 
     /**
      * 批量抓取网络图片
      *
-     * @param batchUploadRequest 批量上传请求参数，包含：
+     * @param uploadBatchRequest 批量上传请求参数，包含：
      *                                    - searchText：搜索关键词
      *                                    - count：需要创建的图片数量
      *                                    - namePrefix：图片名称前缀
      * @param loginUser                   当前登录用户对象，用于记录图片上传者信息
      * @return Integer 实际成功上传并创建的图片数量
      */
-    Integer uploadPictureByBatch(BatchUploadRequest batchUploadRequest, User loginUser);
+    Integer uploadPictureByBatch(UploadBatchRequest uploadBatchRequest, User loginUser);
 
     /**
      * 图片审核处理
      *
-     * @param pictureReviewRequest 图片审核请求参数对象，包含：
+     * @param reviewPictureRequest 图片审核请求参数对象，包含：
      *                             - id：待审核图片ID
      *                             - reviewStatus：审核结果状态（通过/拒绝，不允许待审核）
      *                             - reviewMessage：审核备注信息（当前方法暂未使用）
      * @param loginUser            当前登录用户（审核人），用于记录审核人ID
      */
-    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+    void doPictureReview(ReviewPictureRequest reviewPictureRequest, User loginUser);
 
     // endregion
 
@@ -139,19 +143,19 @@ public interface PictureService extends IService<Picture> {
     /**
      * 图片编辑 (用户)
      *
-     * @param pictureEditRequest 图片编辑请求参数（含待编辑图片ID、新属性等）
+     * @param editPictureRequest 图片编辑请求参数（含待编辑图片ID、新属性等）
      * @param loginUser          当前登录用户（用于权限校验）
      * @return Map<String, Object> 编辑结果：含editSuccess（编辑是否成功）、pictureId（编辑后的图片ID）、message（结果描述）
      */
-    Map<String, Object> editPicture(PictureEditRequest pictureEditRequest, User loginUser);
+    Map<String, Object> editPicture(EditPictureRequest editPictureRequest, User loginUser);
 
     /**
      * 图片查询请求参数转换
      *
-     * @param pictureQueryRequest 图片查询请求参数对象
+     * @param queryPictureRequest 图片查询请求参数对象
      * @return LambdaQueryWrapper<Picture> 构建完成的查询条件封装器，可直接用于MyBatis-Plus的查询方法
      */
-    LambdaQueryWrapper<Picture> getLambdaQueryWrapper(PictureQueryRequest pictureQueryRequest);
+    LambdaQueryWrapper<Picture> getLambdaQueryWrapper(QueryPictureRequest queryPictureRequest);
 
     /**
      * 根据图片ID获取图片VO（视图对象）
@@ -165,11 +169,11 @@ public interface PictureService extends IService<Picture> {
     /**
      * 分页查询图片VO列表
      *
-     * @param pictureQueryRequest 图片查询请求体，包含分页参数、空间ID等查询条件
+     * @param queryPictureRequest 图片查询请求体，包含分页参数、空间ID等查询条件
      * @param request             HTTP请求对象，用于获取当前登录用户信息（私有空间校验时使用）
      * @return Page<PictureVO> 分页包装的图片视图对象列表
      */
-    Page<PictureVO> getPictureVOByPage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request);
+    Page<PictureVO> getPictureVOByPage(QueryPictureRequest queryPictureRequest, HttpServletRequest request);
 
 
     // endregion
@@ -189,10 +193,10 @@ public interface PictureService extends IService<Picture> {
     /**
      * 批量编辑图片信息（分类、标签、名称）
      *
-     * @param batchEditRequest 批量编辑请求参数
+     * @param editBatchRequest 批量编辑请求参数
      * @param loginUser                 当前登录用户
      */
-    void editPictureByBatch(BatchEditRequest batchEditRequest, User loginUser);
+    void editPictureByBatch(EditBatchRequest editBatchRequest, User loginUser);
 
     /**
      * AI扩图任务创建方法

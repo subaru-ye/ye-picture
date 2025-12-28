@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.shared;
+package com.ye.yepicturebackend.model.dto.picture.delete;
 
 
 import lombok.Data;

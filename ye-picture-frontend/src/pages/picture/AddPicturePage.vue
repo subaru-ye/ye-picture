@@ -112,7 +112,7 @@ import ImageOutPainting from '@/components/picture/ImageOutPainting.vue'
 /** 当前图片信息 */
 const picture = ref<API.PictureVO>()
 /** 图片编辑表单数据 */
-const pictureForm = reactive<API.PictureEditRequest>({})
+const pictureForm = reactive<API.EditPictureRequest>({})
 /** 上传方式：文件上传或 URL 上传 */
 const uploadType = ref<'file' | 'url'>('file')
 /** 空间信息 */

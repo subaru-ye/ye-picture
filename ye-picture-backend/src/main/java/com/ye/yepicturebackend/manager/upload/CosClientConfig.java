@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.config;
+package com.ye.yepicturebackend.manager.upload;
 
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;

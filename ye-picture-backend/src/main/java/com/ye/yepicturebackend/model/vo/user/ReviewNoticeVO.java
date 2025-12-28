@@ -34,6 +34,11 @@ public class ReviewNoticeVO implements Serializable {
     private String pictureTitle;
 
     /**
+     * 图片预览 URL（带临时签名的缩略图地址，用于前端展示）
+     */
+    private String pictureUrl;
+
+    /**
      * 审核状态：0-待审核，1-通过，2-拒绝
      */
     private Integer reviewStatus;

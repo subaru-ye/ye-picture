@@ -42,7 +42,6 @@ import {
   createPictureOutPaintingTaskUsingPost,
   getPictureOutPaintingTaskUsingGet,
   uploadPictureByUrlUsingPost,
-  uploadPictureUsingPost,
 } from '@/api/pictureController'
 import { message } from 'ant-design-vue'
 
@@ -149,7 +148,7 @@ const uploadLoading = ref<boolean>(false)
 const handleUpload = async () => {
   uploadLoading.value = true
   try {
-    const params: API.PictureUploadRequest = {
+    const params: API.UploadRequest = {
       fileUrl: resultImageUrl.value,
       spaceId: props.spaceId,
     }

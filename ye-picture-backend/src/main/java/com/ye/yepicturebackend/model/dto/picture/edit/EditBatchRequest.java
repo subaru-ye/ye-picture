@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.shared;
+package com.ye.yepicturebackend.model.dto.picture.edit;
 
 
 import lombok.Data;
@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class BatchEditRequest implements Serializable {
+public class EditBatchRequest implements Serializable {
 
     /**
      * 图片 id 列表

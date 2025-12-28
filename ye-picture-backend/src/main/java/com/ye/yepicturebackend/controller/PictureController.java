@@ -22,13 +22,18 @@ import com.ye.yepicturebackend.exception.ErrorCode;
 import com.ye.yepicturebackend.exception.ThrowUtils;
 import com.ye.yepicturebackend.manager.auth.annotation.SaSpaceCheckPermission;
 import com.ye.yepicturebackend.manager.auth.model.SpaceUserPermissionConstant;
+import com.ye.yepicturebackend.model.dto.picture.edit.EditBatchRequest;
+import com.ye.yepicturebackend.model.dto.picture.query.QueryPictureRequest;
+import com.ye.yepicturebackend.model.dto.picture.query.SearchColorRequest;
+import com.ye.yepicturebackend.model.dto.picture.query.SearchPictureRequest;
+import com.ye.yepicturebackend.model.dto.picture.task.AiExtendRequest;
+import com.ye.yepicturebackend.model.dto.picture.upload.UploadRequest;
 import com.ye.yepicturebackend.model.vo.picture.PictureTagCategory;
 import com.ye.yepicturebackend.model.vo.picture.PictureVO;
-import com.ye.yepicturebackend.model.dto.picture.admin.PictureReviewRequest;
-import com.ye.yepicturebackend.model.dto.picture.admin.PictureUpdateRequest;
-import com.ye.yepicturebackend.model.dto.picture.admin.BatchUploadRequest;
-import com.ye.yepicturebackend.model.dto.picture.shared.*;
-import com.ye.yepicturebackend.model.dto.picture.user.PictureEditRequest;
+import com.ye.yepicturebackend.model.dto.picture.review.ReviewPictureRequest;
+import com.ye.yepicturebackend.model.dto.picture.edit.UpdatePictureRequest;
+import com.ye.yepicturebackend.model.dto.picture.upload.UploadBatchRequest;
+import com.ye.yepicturebackend.model.dto.picture.edit.EditPictureRequest;
 import com.ye.yepicturebackend.model.dto.space.SpaceLevel;
 import com.ye.yepicturebackend.model.entity.Picture;
 import com.ye.yepicturebackend.model.entity.User;
@@ -76,7 +81,7 @@ public class PictureController {
      * 图片上传
      *
      * @param multipartFile        前端上传的图片文件
-     * @param pictureUploadRequest 图片上传/更新请求参数：
+     * @param uploadRequest 图片上传/更新请求参数：
      *                             - 可选：id（更新时必传，指定待更新图片的ID）
      *                             - 可选：picName（自定义图片名称，不传则使用默认名称）
      * @param request              HTTP请求对象，用于获取当前登录用户的会话信息（验证登录状态）
@@ -86,13 +91,13 @@ public class PictureController {
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
-            PictureUploadRequest pictureUploadRequest,
+            UploadRequest uploadRequest,
             HttpServletRequest request
     ) {
         // 1. 获取参数
         User loginUser = userService.getLoginUser(request);
         // 2. 执行service
-        PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
+        PictureVO pictureVO = pictureService.uploadPicture(multipartFile, uploadRequest, loginUser);
         // 3. 返回结果
         return ResultUtils.success(pictureVO);
     }
@@ -100,7 +105,7 @@ public class PictureController {
     /**
      * 通过URL上传图片
      *
-     * @param pictureUploadRequest 请求体参数，包含：
+     * @param uploadRequest 请求体参数，包含：
      *                             - fileUrl：图片的网络URL地址（必填）
      *                             - 其他图片相关信息（如名称、分类、标签等，根据业务需求定义）
      * @param request              HTTP请求对象，用于获取当前登录用户信息（权限验证、记录上传人等）
@@ -111,14 +116,14 @@ public class PictureController {
     @PostMapping("/upload/url")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPictureByUrl(
-            @RequestBody PictureUploadRequest pictureUploadRequest,
+            @RequestBody UploadRequest uploadRequest,
             HttpServletRequest request
     ) {
         // 1. 获取参数
         User loginUser = userService.getLoginUser(request);
-        String fileUrl = pictureUploadRequest.getFileUrl();
+        String fileUrl = uploadRequest.getFileUrl();
         // 2. 执行service
-        PictureVO pictureVO = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
+        PictureVO pictureVO = pictureService.uploadPicture(fileUrl, uploadRequest, loginUser);
         // 3. 返回结果
         return ResultUtils.success(pictureVO);
     }
@@ -127,7 +132,7 @@ public class PictureController {
     /**
      * 批量抓取并创建图片
      *
-     * @param batchUploadRequest 请求体参数，包含：
+     * @param uploadBatchRequest 请求体参数，包含：
      *                                    - searchText：图片搜索关键词
      *                                    - count：需要批量创建的图片数量
      *                                    - namePrefix：图片名称前缀
@@ -141,12 +146,12 @@ public class PictureController {
     @PostMapping("/upload/batch")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Integer> uploadPictureByBatch(
-            @RequestBody BatchUploadRequest batchUploadRequest,
+            @RequestBody UploadBatchRequest uploadBatchRequest,
             HttpServletRequest request) {
         // 1. 获取参数
         User loginUser = userService.getLoginUser(request);
         // 2. 执行service
-        int uploadCount = pictureService.uploadPictureByBatch(batchUploadRequest, loginUser);
+        int uploadCount = pictureService.uploadPictureByBatch(uploadBatchRequest, loginUser);
         // 3. 返回结果
         return ResultUtils.success(uploadCount);
     }
@@ -158,7 +163,7 @@ public class PictureController {
     /**
      * 更新图片（管理员）
      *
-     * @param pictureUpdateRequest 图片更新请求体：包含待更新的图片ID、标签、简介等字段
+     * @param updatePictureRequest 图片更新请求体：包含待更新的图片ID、标签、简介等字段
      * @param request              HTTP请求对象：用于获取当前登录的管理员用户信息
      * @return BaseResponse<Boolean> 接口响应对象：
      * - 成功：返回{success: true, data: true}，表示图片信息更新成功
@@ -167,12 +172,12 @@ public class PictureController {
     @PostMapping("update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Map<String, Object>> updatePicture(
-            @RequestBody PictureUpdateRequest pictureUpdateRequest,
+            @RequestBody UpdatePictureRequest updatePictureRequest,
             HttpServletRequest request) {
         // 1. 获取参数
         User loginUser = userService.getLoginUser(request);
         // 2. 执行Service
-        Map<String, Object> updateResult = pictureService.updatePicture(pictureUpdateRequest, loginUser);
+        Map<String, Object> updateResult = pictureService.updatePicture(updatePictureRequest, loginUser);
         // 3. 返回结果
         return ResultUtils.success(updateResult);
     }
@@ -201,7 +206,7 @@ public class PictureController {
     /**
      * 分页获取图片列表（管理员）
      *
-     * @param pictureQueryRequest 图片查询请求体：包含分页参数（当前页、页大小）和查询条件（如URL、标签、用户ID等）
+     * @param queryPictureRequest 图片查询请求体：包含分页参数（当前页、页大小）和查询条件（如URL、标签、用户ID等）
      * @return BaseResponse<Page < Picture>> 接口响应对象：
      * - 成功：返回{success: true, data: Page<Picture>}，包含分页元数据和图片实体列表
      * - 失败：返回包含错误码（如PARAMS_ERROR）和错误信息的响应
@@ -209,16 +214,16 @@ public class PictureController {
     @PostMapping("/list/page")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<Picture>> listPictureByPage(
-            @RequestBody PictureQueryRequest pictureQueryRequest) {
+            @RequestBody QueryPictureRequest queryPictureRequest) {
         // 参数校验
-        ThrowUtils.throwIf(pictureQueryRequest == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(queryPictureRequest == null, ErrorCode.PARAMS_ERROR);
         // 获取参数
-        int current = pictureQueryRequest.getCurrent();
-        int size = pictureQueryRequest.getPageSize();
+        int current = queryPictureRequest.getCurrent();
+        int size = queryPictureRequest.getPageSize();
         // 执行service
         Page<Picture> picturePage = pictureService.page(
                 new Page<>(current, size),
-                pictureService.getLambdaQueryWrapper(pictureQueryRequest)
+                pictureService.getLambdaQueryWrapper(queryPictureRequest)
         );
         return ResultUtils.success(picturePage);
     }
@@ -226,7 +231,7 @@ public class PictureController {
     /**
      * 图片审核
      *
-     * @param pictureReviewRequest 审核请求参数体，包含：
+     * @param reviewPictureRequest 审核请求参数体，包含：
      *                             - id：待审核图片的ID
      *                             - reviewStatus：审核状态（通过/拒绝等枚举值）
      *                             - reviewMessage：审核备注信息（可选，如拒绝原因）
@@ -238,14 +243,14 @@ public class PictureController {
     @PostMapping("/review")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> doPictureReview(
-            @RequestBody PictureReviewRequest pictureReviewRequest,
+            @RequestBody ReviewPictureRequest reviewPictureRequest,
             HttpServletRequest request) {
         // 参数校验
-        ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(reviewPictureRequest == null, ErrorCode.PARAMS_ERROR);
         // 获取参数
         User loginUser = userService.getLoginUser(request);
         // 执行service
-        pictureService.doPictureReview(pictureReviewRequest, loginUser);
+        pictureService.doPictureReview(reviewPictureRequest, loginUser);
         return ResultUtils.success(true);
     }
 
@@ -331,7 +336,7 @@ public class PictureController {
     /**
      * 分页获取图片列表VO（多级缓存）
      *
-     * @param pictureQueryRequest 分页查询请求参数，包含：
+     * @param queryPictureRequest 分页查询请求参数，包含：
      *                            - current：页码（从1开始）
      *                            - pageSize：每页条数（最大20条，防止爬虫过度请求）
      *                            - 其他查询条件（如分类、标签、审核状态等，普通用户默认仅查询"已通过"状态）
@@ -343,19 +348,19 @@ public class PictureController {
     @Deprecated
     @PostMapping("/list/page/vo/cathe")
     public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCathe(
-            @RequestBody PictureQueryRequest pictureQueryRequest,
+            @RequestBody QueryPictureRequest queryPictureRequest,
             HttpServletRequest request) {
         // 1. 参数校验
-        ThrowUtils.throwIf(pictureQueryRequest == null, ErrorCode.PARAMS_ERROR, "无参数");
+        ThrowUtils.throwIf(queryPictureRequest == null, ErrorCode.PARAMS_ERROR, "无参数");
         // 2. 提取参数
-        int current = pictureQueryRequest.getCurrent();
-        int size = pictureQueryRequest.getPageSize();
+        int current = queryPictureRequest.getCurrent();
+        int size = queryPictureRequest.getPageSize();
         // 限制爬虫处理
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         // 3. 权限控制: 普通用户只能看到审核通过的数据
-        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        queryPictureRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         // 4. 构建缓存key
-        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String queryCondition = JSONUtil.toJsonStr(queryPictureRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
         // 拼接缓存前缀
         String cacheKey = "yepicture:listPictureVOByPage:" + hashKey;
@@ -388,7 +393,7 @@ public class PictureController {
         // 7. 缓存未命中：查询数据库
         Page<Picture> picturePage = pictureService.page(
                 new Page<>(current, size),
-                pictureService.getLambdaQueryWrapper(pictureQueryRequest)
+                pictureService.getLambdaQueryWrapper(queryPictureRequest)
         );
         Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
         // 8. 更新缓存
@@ -449,7 +454,7 @@ public class PictureController {
     /**
      * 分页获取图片列表（VO）
      *
-     * @param pictureQueryRequest 图片查询请求体：包含分页参数（当前页、页大小）和查询条件
+     * @param queryPictureRequest 图片查询请求体：包含分页参数（当前页、页大小）和查询条件
      * @param request             HTTP请求对象：用于获取用户上下文信息，支持后续业务扩展（如用户权限判断）
      * @return BaseResponse<Page < PictureVO>> 接口响应对象：
      * - 成功：返回{success: true, data: Page<PictureVO>}，包含分页信息和VO列表
@@ -457,15 +462,15 @@ public class PictureController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<PictureVO>> listPictureVOByPage(
-            @RequestBody PictureQueryRequest pictureQueryRequest,
+            @RequestBody QueryPictureRequest queryPictureRequest,
             HttpServletRequest request) {
-        return ResultUtils.success(pictureService.getPictureVOByPage(pictureQueryRequest, request));
+        return ResultUtils.success(pictureService.getPictureVOByPage(queryPictureRequest, request));
     }
 
     /**
      * 编辑图片
      *
-     * @param pictureEditRequest 图片编辑请求体：包含待编辑的图片ID、标签、简介等字段
+     * @param editPictureRequest 图片编辑请求体：包含待编辑的图片ID、标签、简介等字段
      * @param request            HTTP请求对象：用于获取当前登录用户信息（用于权限校验）
      * @return BaseResponse<Boolean> 接口响应对象：
      * - 成功：返回{success: true, data: true}，表示图片编辑成功
@@ -474,12 +479,12 @@ public class PictureController {
     @PostMapping("/edit")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Map<String, Object>> editPicture(
-            @RequestBody PictureEditRequest pictureEditRequest,
+            @RequestBody EditPictureRequest editPictureRequest,
             HttpServletRequest request) {
         // 1. 获取参数
         User loginUser = userService.getLoginUser(request);
         // 2. 调用Service
-        Map<String, Object> editResult = pictureService.editPicture(pictureEditRequest, loginUser);
+        Map<String, Object> editResult = pictureService.editPicture(editPictureRequest, loginUser);
         // 3. 返回结果
         return ResultUtils.success(editResult);
     }
@@ -491,14 +496,14 @@ public class PictureController {
     /**
      * 以图搜图
      *
-     * @param searchPictureByPictureRequest 以图搜图请求体，需包含待搜索图片的ID
+     * @param searchPictureRequest 以图搜图请求体，需包含待搜索图片的ID
      * @return 包含图像搜索结果列表的基础响应体
      */
     @PostMapping("/search/picture")
-    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureRequest searchPictureRequest) {
         // 1. 参数校验
-        ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
-        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ThrowUtils.throwIf(searchPictureRequest == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = searchPictureRequest.getPictureId();
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
 
         // 2. 查询图片是否存在
@@ -523,7 +528,7 @@ public class PictureController {
     /**
      * 根据颜色搜索图片
      *
-     * @param searchPictureByColorRequest 请求体参数封装对象，包含：
+     * @param searchColorRequest 请求体参数封装对象，包含：
      *                                    - picColor：目标颜色的十六进制字符串（支持腾讯COS返回的缩略格式，如0x8、0xA100等）
      *                                    - spaceId：图片所在的空间ID（用于限定查询范围）
      * @param request                     HttpServletRequest对象，用于获取当前登录用户的会话信息
@@ -531,11 +536,11 @@ public class PictureController {
      */
     @PostMapping("/search/color")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_VIEW)
-    public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchPictureByColorRequest searchPictureByColorRequest, HttpServletRequest request) {
+    public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchColorRequest searchColorRequest, HttpServletRequest request) {
         // 1. 校验并获取参数
-        ThrowUtils.throwIf(searchPictureByColorRequest == null, ErrorCode.PARAMS_ERROR);
-        String picColor = searchPictureByColorRequest.getPicColor();
-        Long spaceId = searchPictureByColorRequest.getSpaceId();
+        ThrowUtils.throwIf(searchColorRequest == null, ErrorCode.PARAMS_ERROR);
+        String picColor = searchColorRequest.getPicColor();
+        Long spaceId = searchColorRequest.getSpaceId();
         User loginUser = userService.getLoginUser(request);
 
         // 2. 调用service
@@ -548,22 +553,22 @@ public class PictureController {
     /**
      * 批量编辑图片信息
      *
-     * @param batchEditRequest 前端传递的批量编辑请求体
+     * @param editBatchRequest 前端传递的批量编辑请求体
      * @param request                   HttpServletRequest对象
      * @return BaseResponse<Boolean> 统一响应体，成功时返回true，失败时返回错误信息
      */
     @PostMapping("/edit/batch")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPictureByBatch(
-            @RequestBody BatchEditRequest batchEditRequest,
+            @RequestBody EditBatchRequest editBatchRequest,
             HttpServletRequest request) {
         // 1. 提取并校验参数
-        ThrowUtils.throwIf(batchEditRequest == null,
+        ThrowUtils.throwIf(editBatchRequest == null,
                 ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
 
         // 2. 调用Service
-        pictureService.editPictureByBatch(batchEditRequest, loginUser);
+        pictureService.editPictureByBatch(editBatchRequest, loginUser);
 
         // 3. 返回结果
         return ResultUtils.success(true);

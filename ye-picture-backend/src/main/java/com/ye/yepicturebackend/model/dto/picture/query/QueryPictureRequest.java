@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.shared;
+package com.ye.yepicturebackend.model.dto.picture.query;
 
 import com.ye.yepicturebackend.common.PageRequest;
 import lombok.Data;
@@ -13,7 +13,7 @@ import java.util.List;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class PictureQueryRequest extends PageRequest implements Serializable {
+public class QueryPictureRequest extends PageRequest implements Serializable {
 
     /**
      * id

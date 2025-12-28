@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.user;
+package com.ye.yepicturebackend.model.dto.picture.edit;
 
 import lombok.Data;
 
@@ -9,7 +9,7 @@ import java.util.List;
  * 图片编辑请求
  */
 @Data
-public class PictureEditRequest implements Serializable {
+public class EditPictureRequest implements Serializable {
 
     /**
      * id

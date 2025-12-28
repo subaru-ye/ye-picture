@@ -114,7 +114,7 @@ const total = ref(0)
 const loading = ref(true)
 
 /** 搜索条件参数 */
-const searchParams = reactive<API.PictureQueryRequest>({
+const searchParams = reactive<API.QueryPictureRequest>({
   current: 1,
   pageSize: 12,
   sortField: 'createTime',
@@ -174,23 +174,23 @@ const fetchData = async () => {
   loading.value = true
   try {
     // 构建搜索参数
-    const params: API.PictureQueryRequest = {
+    const params: API.QueryPictureRequest = {
       ...searchParams,
       tags: [] as string[],
     }
-    
+
     // 如果选择了分类（非"全部"），则添加到搜索参数中
     if (selectedCategory.value !== 'all') {
       params.category = selectedCategory.value
     }
-    
+
     // 将选中的标签添加到搜索参数中（只处理显示的标签）
     displayedTagList.value.forEach((tag, index) => {
       if (selectedTagList.value[index]) {
         params.tags!.push(tag)
       }
     })
-    
+
     // 调用接口获取数据
     const res = await listPictureVoByPageUsingPost(params)
     if (res.data.data) {
@@ -240,56 +240,56 @@ const saveSearchHistory = () => {
     tags: [] as string[],
     timestamp: Date.now(),
   }
-  
+
   // 收集选中的标签
   selectedTagList.value.forEach((useTag, index) => {
     if (useTag) {
       currentSearch.tags!.push(tagList.value[index])
     }
   })
-  
+
   // 如果没有标签，删除空数组
   if (currentSearch.tags!.length === 0) {
     delete currentSearch.tags
   }
-  
+
   // 检查是否为空搜索（无关键词、无分类、无标签）
-  const isEmptySearch = !currentSearch.searchText && 
-                        !currentSearch.category && 
+  const isEmptySearch = !currentSearch.searchText &&
+                        !currentSearch.category &&
                         (!currentSearch.tags || currentSearch.tags.length === 0)
-  
+
   // 空搜索不保存
   if (isEmptySearch) {
     return
   }
-  
+
   // 从 localStorage 读取历史记录
   const historyStr = localStorage.getItem(SEARCH_HISTORY_KEY)
   let historyList: SearchHistoryItem[] = historyStr ? JSON.parse(historyStr) : []
-  
+
   // 检查是否已存在相同的搜索（比较搜索参数）
   const existingIndex = historyList.findIndex(item => {
     return item.searchText === currentSearch.searchText &&
            item.category === currentSearch.category &&
            JSON.stringify(item.tags || []) === JSON.stringify(currentSearch.tags || [])
   })
-  
+
   // 如果已存在，先删除旧的
   if (existingIndex !== -1) {
     historyList.splice(existingIndex, 1)
   }
-  
+
   // 将当前搜索添加到最前面
   historyList.unshift(currentSearch)
-  
+
   // 限制历史记录数量
   if (historyList.length > MAX_HISTORY_COUNT) {
     historyList = historyList.slice(0, MAX_HISTORY_COUNT)
   }
-  
+
   // 保存到 localStorage
   localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(historyList))
-  
+
   // 更新当前历史列表
   searchHistoryList.value = historyList
 }
@@ -316,10 +316,10 @@ const loadSearchHistory = () => {
 const selectSearchHistory = (history: SearchHistoryItem) => {
   // 恢复搜索关键词
   searchParams.searchText = history.searchText || ''
-  
+
   // 恢复分类
   selectedCategory.value = history.category || 'all'
-  
+
   // 恢复标签选择状态（基于显示的标签列表）
   const displayCount = Math.min(MAX_DISPLAY_TAG_COUNT, tagList.value.length)
   selectedTagList.value = new Array(displayCount).fill(false)
@@ -331,10 +331,10 @@ const selectSearchHistory = (history: SearchHistoryItem) => {
       }
     })
   }
-  
+
   // 隐藏历史记录列表
   showSearchHistory.value = false
-  
+
   // 执行搜索
   searchParams.current = 1
   void fetchData()
@@ -412,7 +412,7 @@ watch(
     if (!isInitialized.value) {
       return
     }
-    
+
     // 如果搜索框被清空（从有值变为空），自动搜索
     if (oldVal && !newVal) {
       searchParams.current = 1

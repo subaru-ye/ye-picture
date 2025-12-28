@@ -1,4 +1,4 @@
-package com.ye.yepicturebackend.model.dto.picture.shared;
+package com.ye.yepicturebackend.model.dto.picture.upload;
 
 import lombok.Data;
 
@@ -9,7 +9,7 @@ import java.util.List;
  * 图片上传请求
  */
 @Data
-public class PictureUploadRequest implements Serializable {
+public class UploadRequest implements Serializable {
 
     /**
      * 图片 id（用于修改）

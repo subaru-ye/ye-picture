@@ -11,7 +11,7 @@ export const PIC_REVIEW_STATUS_MAP = {
   0: '待审核',
   1: '通过',
   2: '拒绝',
-}
+} as const;
 
 export const PIC_REVIEW_STATUS_OPTIONS = Object.keys(PIC_REVIEW_STATUS_MAP).map((key) => {
   return {

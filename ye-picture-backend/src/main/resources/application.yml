@@ -6,33 +6,39 @@ server:
     session:
       cookie:
         max-age: 2592000
+
 spring:
   application:
     name: ye-picture-backend
+
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ye_picture
-    username: root
-    password: 123456
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ye_picture}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+
   session:
     store-type: redis
     # session 30天过期
     timeout: 2592000
+
   # Redis 配置
   redis:
     database: 0
-    host: 127.0.0.1
-    port: 6379
+    host: ${REDIS_HOST:127.0.0.1}
+    port: ${REDIS_PORT:6379}
     timeout: 5000
+    password: ${REDIS_PASSWORD:}
+
   # rabbitMQ配置
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /
-    # 可选：开启发布确认（生产环境建议开）
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    # 可选：开启发布确认
     publisher-confirm-type: correlated
     publisher-returns: true
     template:
@@ -43,19 +49,24 @@ spring:
         retry:
           enabled: true
           max-attempts: 3
+
   # 邮箱配置
   mail:
-    host: smtp.qq.com
-    port: 587
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
-            enable: true              # 使用 STARTTLS 加密（对应 port=587）
+            enable: true
+
   servlet:
     multipart:
-      max-file-size: 10MB
+      max-file-size: 10MB # 最大上传文件大小
+
 # mybatis-plus配置
 mybatis-plus:
   configuration:
@@ -65,9 +76,10 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
-      logic-delete-field: isDelete # 全局逻辑删除的实体字段名
+      logic-delete-field: isDelete
       logic-delete-value: 1
       logic-not-delete-value: 0
+
 # 接口文档配置
 knife4j:
   enable: true

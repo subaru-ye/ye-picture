@@ -19,7 +19,7 @@ export async function deletePictureUsingPost(
 
 /** editPicture POST /api/picture/edit */
 export async function editPictureUsingPost(
-  body: API.PictureEditRequest,
+  body: API.EditPictureRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseMapStringObject_>('/api/picture/edit', {
@@ -34,7 +34,7 @@ export async function editPictureUsingPost(
 
 /** editPictureByBatch POST /api/picture/edit/batch */
 export async function editPictureByBatchUsingPost(
-  body: API.PictureEditByBatchRequest,
+  body: API.EditBatchRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>('/api/picture/edit/batch', {
@@ -87,7 +87,7 @@ export async function listSpaceLevelUsingGet(options?: { [key: string]: any }) {
 
 /** listPictureByPage POST /api/picture/list/page */
 export async function listPictureByPageUsingPost(
-  body: API.PictureQueryRequest,
+  body: API.QueryPictureRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponsePagePicture_>('/api/picture/list/page', {
@@ -102,7 +102,7 @@ export async function listPictureByPageUsingPost(
 
 /** listPictureVOByPage POST /api/picture/list/page/vo */
 export async function listPictureVoByPageUsingPost(
-  body: API.PictureQueryRequest,
+  body: API.QueryPictureRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponsePagePictureVO_>('/api/picture/list/page/vo', {
@@ -117,7 +117,7 @@ export async function listPictureVoByPageUsingPost(
 
 /** listPictureVOByPageWithCathe POST /api/picture/list/page/vo/cathe */
 export async function listPictureVoByPageWithCatheUsingPost(
-  body: API.PictureQueryRequest,
+  body: API.QueryPictureRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponsePagePictureVO_>('/api/picture/list/page/vo/cathe', {
@@ -132,7 +132,7 @@ export async function listPictureVoByPageWithCatheUsingPost(
 
 /** createPictureOutPaintingTask POST /api/picture/out_painting/create_task */
 export async function createPictureOutPaintingTaskUsingPost(
-  body: API.CreatePictureOutPaintingTaskRequest,
+  body: API.AiExtendRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseCreateOutPaintingTaskResponse_>(
@@ -168,7 +168,7 @@ export async function getPictureOutPaintingTaskUsingGet(
 
 /** doPictureReview POST /api/picture/review */
 export async function doPictureReviewUsingPost(
-  body: API.PictureReviewRequest,
+  body: API.ReviewPictureRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>('/api/picture/review', {
@@ -183,7 +183,7 @@ export async function doPictureReviewUsingPost(
 
 /** searchPictureByColor POST /api/picture/search/color */
 export async function searchPictureByColorUsingPost(
-  body: API.SearchPictureByColorRequest,
+  body: API.SearchColorRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseListPictureVO_>('/api/picture/search/color', {
@@ -198,7 +198,7 @@ export async function searchPictureByColorUsingPost(
 
 /** searchPictureByPicture POST /api/picture/search/picture */
 export async function searchPictureByPictureUsingPost(
-  body: API.SearchPictureByPictureRequest,
+  body: API.SearchPictureRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseListImageSearchResult_>('/api/picture/search/picture', {
@@ -231,7 +231,7 @@ export async function listPictureTagCategoryUsingGet(options?: { [key: string]: 
 
 /** updatePicture POST /api/picture/update */
 export async function updatePictureUsingPost(
-  body: API.PictureUpdateRequest,
+  body: API.UpdatePictureRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseMapStringObject_>('/api/picture/update', {
@@ -287,7 +287,7 @@ export async function uploadPictureUsingPost(
 
 /** uploadPictureByBatch POST /api/picture/upload/batch */
 export async function uploadPictureByBatchUsingPost(
-  body: API.PictureUploadByBatchRequest,
+  body: API.UploadBatchRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseInt_>('/api/picture/upload/batch', {
@@ -302,7 +302,7 @@ export async function uploadPictureByBatchUsingPost(
 
 /** uploadPictureByUrl POST /api/picture/upload/url */
 export async function uploadPictureByUrlUsingPost(
-  body: API.PictureUploadRequest,
+  body: API.UploadRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponsePictureVO_>('/api/picture/upload/url', {

@@ -48,39 +48,30 @@
               :title="item.pictureTitle || '图片审核通知'"
               :description="formatDateTime(item.createTime)"
             >
-              <!-- 可选：显示一个表示图片审核的图标 -->
-              <!-- <template #avatar>
-                <a-avatar icon="picture" />
-              </template> -->
             </a-list-item-meta>
             <!-- 显示审核结果信息和图片 -->
             <div class="notice-content">
-              <!-- 图片展示区域，使用 a-avatar 显示图片 -->
-              <div v-if="item.pictureUrl" class="image-preview"> <!-- 修改：检查 pictureUrl -->
-                <!-- 直接绑定 item.pictureUrl 到 a-avatar 的 src 属性 -->
-                <a-avatar
-                  :size="64"
-                  :src="item.pictureUrl"
+              <!-- 图片展示区域，使用 a-image 显示图片 -->
+              <div v-if="item.pictureUrl || item.pictureId" class="image-preview">
+                <a-image
+                  :width="128"
+                :height="96"
+                :src="item.pictureUrl || `/api/file/get/${item.pictureId}`"
                 :alt="item.pictureTitle || '审核图片'"
-                shape="square"
-                style="margin-bottom: 8px;"
+                style="object-fit: cover; margin-bottom: 8px; border-radius: 4px;"
                 >
-                <!-- 可选：如果图片加载失败，a-avatar 会显示默认图标或首字母 -->
-                <!-- <template #icon><PictureOutlined /></template> -->
-                </a-avatar>
-              </div>
-              <!-- 如果 pictureUrl 不存在但 pictureId 存在，可以尝试构造 URL (可选逻辑) -->
-              <div v-else-if="item.pictureId && !item.pictureUrl" class="image-preview">
-                <a-avatar
-                  :size="64"
-                  :src="`/api/file/get/${item.pictureId}`"
-                :alt="item.pictureTitle || '审核图片'"
-                shape="square"
-                style="margin-bottom: 8px;"
-                >
-                <!-- 可选：如果图片加载失败，a-avatar 会显示默认图标或首字母 -->
-                <!-- <template #icon><PictureOutlined /></template> -->
-                </a-avatar>
+                <!-- 可选：加载失败时的占位符或错误处理 -->
+                <template #placeholder>
+                  <div style="background: #f5f5f5; height: 100%; width: 100%; display: flex; align-items: center; justify-content: center;">
+                    加载中...
+                  </div>
+                </template>
+                <template #fallback>
+                  <div style="background: #f0f0f0; height: 100%; width: 100%; display: flex; align-items: center; justify-content: center;">
+                    <span>加载失败</span>
+                  </div>
+                </template>
+                </a-image>
               </div>
               <!-- <p><strong>图片ID:</strong> {{ item.pictureId || 'N/A' }}</p> 移除图片ID显示 -->
               <p><strong>审核状态:</strong>
@@ -110,7 +101,7 @@ import { getUnreadCountUsingGet, listNoticesUsingGet, markAsReadUsingPost } from
 
 // 响应式数据
 const loading = ref<boolean>(false)
-const noticeList = ref<API.ReviewNoticeVO[]>([]) // 确保 ReviewNoticeVO 类型定义中包含 pictureUrl 字段
+const noticeList = ref<API.ReviewNoticeVO[]>([]) 
 const total = ref<number>(0)
 const unreadCount = ref<number>(0)
 
@@ -154,12 +145,7 @@ const loadNotices = async () => {
     const res = await listNoticesUsingGet(params)
     if (res.data.code === 0 && res.data.data) {
       noticeList.value = res.data.data.records || []
-      // --- 修改这里 ---
-      // 确保 res.data.data.total 被转换为数字类型
-      total.value = Number(res.data.data.total) || 0 // 使用 Number() 或 parseInt()
-      // 或者如果 res.data.data.total 可能是 undefined 或 null，可以这样写：
-      // total.value = res.data.data.total !== undefined && res.data.data.total !== null ? Number(res.data.data.total) : 0;
-      // ---
+      total.value = Number(res.data.data.total) || 0
     } else {
       message.error('加载审核通知失败: ' + (res.data.message || '未知错误'))
       noticeList.value = []
@@ -253,7 +239,6 @@ onMounted(() => {
 
 .notice-content {
   margin-top: 8px;
-  /* word-break: break-word; */
 }
 
 .image-preview {

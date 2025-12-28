@@ -46,14 +46,12 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue'
 import {
-  editPictureUsingPost,
-  getPictureVoByIdUsingGet,
   listPictureTagCategoryUsingGet, uploadPictureByBatchUsingPost,
 } from '@/api/pictureController.ts'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 
-const formData = reactive<API.PictureUploadByBatchRequest>({
+const formData = reactive<API.UploadBatchRequest>({
   count: 10,
   tags: [],
 })
@@ -99,7 +97,7 @@ const handleSubmit = async (values: any) => {
   })
   if (res.data.code === 0 && res.data.data) {
     message.success(`创建成功，共 ${res.data.data} 条`)
-    router.push({
+    await router.push({
       path: '/',
     })
   } else {
