@@ -16,4 +16,5 @@ public interface CosUrlService {
      * 生成指定有效期的签名 URL
      */
     String generateSignedUrl(String key, long expireMillis);
+
 }

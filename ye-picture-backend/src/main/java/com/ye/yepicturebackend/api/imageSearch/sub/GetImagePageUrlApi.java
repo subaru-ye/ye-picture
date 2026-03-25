@@ -101,9 +101,7 @@ public class GetImagePageUrlApi {
 
     // 测试方法
     public static void main(String[] args) {
-        String imageUrl = "https://ts1.tc.mm.bing.net/th/id/R-C.c1bf9b1414e92190f2ff58dcbcc63fe5?" +
-                "rik=SMCsXze34Dqcyw&riu=http%3a%2f%2fseopic.699pic.com%2fphoto%2f50085%2f2259" +
-                ".jpg_wh1200.jpg&ehk=OIinHBFGcM0%2bxJ0W4ho8psSYzT30Fz1CU1RMOw1%2fJgA%3d&risl=&pid=ImgRaw&r=0";
+        String imageUrl = "https://picx.zhimg.com/v2-ab23d513fab6abd0a27cda9ba9676383_720w.jpg?source=172ae18b";
         String result = getImagePageUrl(imageUrl);
         System.out.println("搜索成功，结果 URL：" + result);
     }

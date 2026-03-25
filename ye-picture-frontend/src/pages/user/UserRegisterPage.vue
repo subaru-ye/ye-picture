@@ -1,7 +1,7 @@
 <template>
   <div id="userRegisterPage">
     <!-- 注册页标题 -->
-    <h2 class="title">Tonight云图库 - 用户注册</h2>
+    <h2 class="title">白桦图库 - 用户注册</h2>
     <!-- 注册页描述 -->
     <div class="desc">智能协同云图库</div>
     <!-- 注册表单：绑定数据模型，左对齐标签，提交触发注册逻辑 -->

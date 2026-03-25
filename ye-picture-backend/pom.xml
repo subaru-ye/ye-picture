@@ -171,6 +171,20 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- 阿里云核心SDK -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>aliyun-java-sdk-core</artifactId>
+            <version>4.5.25</version>
+        </dependency>
+
+        <!-- 阿里图像搜索-->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>imagesearch20201214</artifactId>
+            <version>4.2.2</version>
+        </dependency>
+
     </dependencies>
     <dependencyManagement>
         <dependencies>

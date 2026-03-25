@@ -1,9 +1,9 @@
 <template>
   <div id="userLoginPage">
     <!-- 登录页标题 -->
-    <h2 class="title">Tonight云图库 - 用户登录</h2>
+    <h2 class="title">白桦图库 - 用户登录</h2>
     <!-- 登录页描述 -->
-    <div class="desc">Tonight图库</div>
+    <div class="desc">白桦图库</div>
     <!-- 登录表单：绑定表单数据，配置校验规则，提交触发handleSubmit -->
     <a-form :model="formState" name="basic" autocomplete="off" @finish="handleSubmit">
       <!-- 账号输入框：必填校验 -->

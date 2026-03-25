@@ -47,4 +47,14 @@ public class ImageSearchApiFacade {
         // 返回格式统一的 ImageSearchResult 列表，供上层业务使用
         return GetImageListApi.getImageList(imageFirstUrl);
     }
+    // 测试方法
+    public static void main(String[] args) {
+        // 测试用的待搜索图片URL
+        String imageUrl = "https://picx.zhimg.com/v2-d6f44389971daab7e688e5b37046e4e4_720w.jpg?source=172ae18b";
+        // 执行完整以图搜图流程
+        List<ImageSearchResult> resultList = searchImage(imageUrl);
+        // 打印结果
+        System.out.println("以图搜图测试成功，结果列表长度：" + resultList.size());
+        System.out.println("结果列表详情：" + resultList);
+    }
 }

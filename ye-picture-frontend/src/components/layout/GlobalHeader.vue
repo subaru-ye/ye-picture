@@ -7,7 +7,7 @@
         <RouterLink to="/">
           <div class="title-bar">
             <img class="logo" :src="logoUrl" alt="logo" />
-            <div class="title">Tonight图库</div>
+            <div class="title">白桦图享工坊</div>
           </div>
         </RouterLink>
       </a-col>

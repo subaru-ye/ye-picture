@@ -16,6 +16,7 @@
         :canMoveBox="true"
         :info="true"
         outputType="png"
+        style="width: 100%; height: 250px; border: 1px solid #ddd; background-color: #fafafa;"
       />
       <div style="margin-bottom: 16px" />
       <!-- 协同编辑操作（仅团队空间显示） -->
@@ -63,7 +64,6 @@ interface Props {
   onSuccess?: (newPicture: API.PictureVO) => void
 }
 const props = defineProps<Props>()
-
 // 编辑器组件引用
 const cropperRef = ref()
 
@@ -182,6 +182,7 @@ const initWebsocket = () => {
     // 监听编辑操作同步
     websocket.on(PICTURE_EDIT_MESSAGE_TYPE_ENUM.EDIT_ACTION, (msg) => {
       console.log('编辑操作消息：', msg)
+      message.info(msg.message)
       if (cropperRef.value) {
         switch (msg.editAction) {
           case PICTURE_EDIT_ACTION_ENUM.ROTATE_LEFT:
@@ -197,6 +198,8 @@ const initWebsocket = () => {
             cropperRef.value.changeScale(-1)
             break
         }
+      }else {
+        console.warn('裁剪组件未就绪');
       }
     })
 
@@ -251,7 +254,6 @@ const closeModal = () => {
     websocket = null
   }
   editingUser.value = undefined
-  cropperRef.value?.reset() // 重置裁剪组件状态
 }
 
 // 进入编辑状态（发送WebSocket消息）
